@@ -272,7 +272,16 @@ function speak(text,onend){
   if(onend) u.onend=onend;
   synth.speak(u);
 }
-function speakSeq(list){let i=0;const next=()=>{if(i<list.length) speak(list[i++],()=>setTimeout(next,350));};next();}
+const queued=[]; // keep references so the browser doesn't drop utterances mid-queue
+function speakSeq(list){
+  if(!synth) return;
+  synth.cancel(); queued.length=0;
+  list.forEach(text=>{
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang="vi-VN"; if(viVoice) u.voice=viVoice; u.rate=rate;
+    queued.push(u); synth.speak(u);
+  });
+}
 document.querySelectorAll(".speed button").forEach(b=>b.addEventListener("click",()=>{
   rate=parseFloat(b.dataset.rate);
   document.querySelectorAll(".speed button").forEach(x=>x.setAttribute("aria-pressed",x===b));
@@ -353,7 +362,6 @@ function setWord(w){
 }
 $("pWord").addEventListener("change",e=>setWord(e.target.value));
 $("refBtn").addEventListener("click",()=>speak(target));
-setWord("ma");
 
 /* ---------- recording + pitch analysis ---------- */
 let stream=null,actx=null,mediaRec=null,chunks=[],mineURL=null,recording=false,raf=0,frames=[],t0=0,lastVoice=0,srcNode=null,analyser=null,mineAudio=null;
@@ -539,6 +547,7 @@ $("srBtn").addEventListener("click",()=>{
   r.onend=()=>{$("srBtn").disabled=!SR;};
   try{r.start();}catch(e){out.textContent="음성인식을 시작하지 못했어요."; $("srBtn").disabled=false;}
 });
+setWord("ma");
 </script>
 </body>
 </html>
