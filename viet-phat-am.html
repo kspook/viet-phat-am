@@ -119,9 +119,76 @@ canvas#graph{width:100%;height:180px;display:block;border-radius:10px;background
 .chip button{border:none;background:none;color:var(--fg);cursor:pointer;padding:5px 8px;font:inherit}
 .chip button.x{color:var(--muted);padding-left:2px;font-family:var(--f-body)}
 .chip small{font:400 .78rem var(--f-body);color:var(--muted);margin-left:4px}
-.hist{display:flex;flex-direction:column;gap:6px;font-size:.88rem}
-.hist div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line);padding-block:4px;font-variant-numeric:tabular-nums}
-.hist b{font-family:var(--f-viet)}
+.records{margin-top:22px;display:flex;flex-direction:column;gap:10px}
+.rhead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.rhead h2{margin:0}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{font:600 .85rem var(--f-body);border:none;background:var(--surface);color:var(--muted);padding:6px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.periods{display:flex;gap:6px;flex-wrap:wrap}
+.periods button{font:600 .82rem var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:5px 11px;border-radius:999px;cursor:pointer}
+.periods button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:var(--soft)}
+.range{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:.88rem}
+.range input{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--fg)}
+.sum{display:flex;gap:16px;flex-wrap:wrap;font-size:.86rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.sum b{color:var(--fg);font-size:1.05rem}
+.hist{display:flex;flex-direction:column;font-size:.9rem}
+.daylbl{font-size:.78rem;color:var(--muted);font-weight:600;padding-top:10px;padding-bottom:2px;letter-spacing:.02em}
+.hrow{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;border:none;border-bottom:1px solid var(--line);background:none;color:var(--fg);padding:9px 2px;cursor:pointer;font:inherit;text-align:left}
+.hrow:hover{background:var(--soft)}
+.hw{font-family:var(--f-viet);font-weight:600;color:var(--accent)}
+.hm{color:var(--muted);font-size:.8rem}
+.sc{font-weight:700;font-variant-numeric:tabular-nums}
+.sc-g{color:var(--good)} .sc-w{color:var(--warn)} .sc-b{color:var(--bad)}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+#avgTbl{border-collapse:collapse;width:100%;font-size:.86rem;font-variant-numeric:tabular-nums}
+#avgTbl th,#avgTbl td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+#avgTbl tr:last-child td{border-bottom:none}
+#avgTbl th{font-weight:600;color:var(--muted);font-size:.76rem}
+#avgTbl th:first-child,#avgTbl td:first-child{text-align:left;position:sticky;left:0;background:var(--surface);z-index:1}
+#avgTbl small{color:var(--muted);font-size:.72rem;margin-left:2px;font-weight:400}
+#avgTbl .wk{border-left:1px solid var(--line)}
+.wbtn{border:none;background:none;font:600 .95rem var(--f-viet);color:var(--accent);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px}
+.clear{font-size:.82rem;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.linkbtn{border:none;background:none;color:var(--muted);font:.82rem var(--f-body);text-decoration:underline;cursor:pointer;padding:0}
+.linkbtn.danger{color:var(--bad);font-weight:600}
+#backAll{align-self:flex-start;font-size:.88rem;color:var(--accent);font-weight:600}
+.filters{display:flex;flex-direction:column;gap:8px;margin-block:10px 4px}
+.frow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+select.sm{width:auto;font:600 .85rem var(--f-body);padding:5px 8px}
+.items{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.it{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:9px;min-width:0}
+.it.p-hi{border-left:4px solid var(--bad)} .it.p-mid{border-left:4px solid var(--warn)} .it.p-lo{border-left:4px solid var(--good)}
+.it-top{display:flex;gap:12px;align-items:flex-start}
+.it-l{font-family:var(--f-viet);font-weight:800;font-size:1.45rem;line-height:1.15;min-width:76px;max-width:40%;overflow-wrap:anywhere}
+.it-main{min-width:0;display:flex;flex-direction:column;gap:5px}
+.it-hint{font-weight:600}
+.tags{display:flex;gap:5px;flex-wrap:wrap}
+.tag{font-size:.74rem;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--muted);white-space:nowrap}
+.tag.kr{color:var(--warn)}
+.tag.today{background:color-mix(in srgb,var(--good) 15%,var(--surface));color:var(--good)}
+.tag.skiptoday{background:var(--soft);color:var(--muted)}
+.pri{font-size:.74rem;font-weight:700;padding:2px 8px;border-radius:999px;color:var(--surface)}
+.pri.p-hi{background:var(--bad)} .pri.p-mid{background:var(--warn)} .pri.p-lo{background:var(--good)}
+.it-why{font-size:.84rem;color:var(--muted)}
+.it-ex{display:flex;gap:6px;flex-wrap:wrap}
+.exw{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.exw button{border:none;background:var(--bg);color:var(--fg);font:600 .95rem var(--f-viet);padding:5px 10px;cursor:pointer}
+.exw button small{font:400 .76rem var(--f-body);color:var(--muted);margin-left:3px}
+.exw button.m{background:var(--soft);color:var(--rec);padding:5px 9px}
+.it-stats{font-size:.82rem;color:var(--muted);display:flex;gap:4px 12px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.it-stats b{color:var(--fg)}
+.it-act{display:flex;gap:6px;flex-wrap:wrap}
+.act{font:600 .85rem var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:7px 12px;border-radius:9px;cursor:pointer}
+.act.ok{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.act.more{margin-left:auto}
+.it-hist{border-top:1px solid var(--line);padding-top:8px;display:flex;flex-direction:column;gap:2px;font-size:.84rem}
+.it-days{font-size:.82rem;color:var(--muted);margin-bottom:4px}
+.it-days b{color:var(--fg);font-variant-numeric:tabular-nums}
+.lg{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px dashed var(--line);font-variant-numeric:tabular-nums}
+.lg:last-child{border-bottom:none}
+.lg .k-done{color:var(--good);font-weight:600} .lg .k-skip{color:var(--muted);font-weight:600} .lg .k-tone,.lg .k-sr{color:var(--accent);font-weight:600}
+.lg .x{border:none;background:none;color:var(--muted);cursor:pointer;font-size:.9rem;padding:0 4px}
 @media (max-width:420px){.opts{grid-template-columns:repeat(2,1fr)} .speed{margin-left:0} .target .syl{font-size:2.4rem}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -140,6 +207,7 @@ canvas#graph{width:100%;height:180px;display:block;border-radius:10px;background
   <button class="tab" role="tab" data-tab="cons" aria-selected="false">자음</button>
   <button class="tab" role="tab" data-tab="quiz" aria-selected="false">퀴즈</button>
   <button class="tab" role="tab" data-tab="rec" aria-selected="false">🎙 녹음 채점</button>
+  <button class="tab" role="tab" data-tab="all" aria-selected="false">📋 전체 발음</button>
   <div class="speed">속도
     <button id="sp-slow" data-rate="0.55" aria-pressed="true">천천히</button>
     <button id="sp-norm" data-rate="0.9" aria-pressed="false">보통</button>
@@ -183,6 +251,7 @@ canvas#graph{width:100%;height:180px;display:block;border-radius:10px;background
   <h2>녹음 채점</h2>
   <p class="hint">원어민 소리를 듣고 따라 말하면, 내 목소리의 음높이 변화를 분석해 성조를 채점해요.</p>
   <div class="panel">
+    <button class="linkbtn" id="backAll" hidden>← 전체 발음 목록으로</button>
     <div><label class="lb" for="pWord">연습할 단어</label><select id="pWord"></select></div>
     <div class="custom">
       <label class="lb" for="cWord">내 단어 추가</label>
@@ -222,14 +291,67 @@ canvas#graph{width:100%;height:180px;display:block;border-radius:10px;background
     </div>
   </div>
 
-  <h2 style="margin-top:22px">최근 기록</h2>
-  <div class="hist" id="hist"><span class="hint">아직 기록이 없어요.</span></div>
+  <div class="records" id="records">
+    <div class="rhead">
+      <h2>연습 기록</h2>
+      <div class="seg" id="rView">
+        <button data-v="list" aria-pressed="true">기록 목록</button>
+        <button data-v="avg" aria-pressed="false">단어별 평균</button>
+      </div>
+    </div>
+    <div class="periods" id="periods">
+      <button data-p="today" aria-pressed="false">오늘</button>
+      <button data-p="7" aria-pressed="true">최근 7일</button>
+      <button data-p="30" aria-pressed="false">최근 30일</button>
+      <button data-p="all" aria-pressed="false">전체</button>
+      <button data-p="custom" aria-pressed="false">기간 지정</button>
+    </div>
+    <div class="range" id="range" hidden>
+      <input type="date" id="dFrom" aria-label="시작일"> ~ <input type="date" id="dTo" aria-label="종료일">
+    </div>
+    <div class="sum" id="sum"></div>
+    <div class="hist" id="vList"></div>
+    <div id="vAvg" hidden>
+      <p class="hint" id="avgEmpty" hidden></p>
+      <div class="tbl-wrap" id="tblWrap"><table id="avgTbl"></table></div>
+      <p class="khint" id="avgNote">주 단위 평균 점수예요(월요일 시작, 최근 주가 왼쪽). 괄호는 그 주의 연습 횟수예요. 단어를 누르면 바로 따라하기로 이동해요.</p>
+    </div>
+    <div class="clear">
+      <button class="linkbtn" id="clr">기록 모두 지우기</button>
+      <span id="clrConfirm" hidden>모든 기록을 지울까요? 되돌릴 수 없어요.
+        <button class="linkbtn danger" id="clrYes">지우기</button> <button class="linkbtn" id="clrNo">취소</button></span>
+    </div>
+  </div>
 
   <ul class="tips">
     <li>조용한 곳에서, 휴대폰을 입에서 한 뼘 정도 떨어뜨리고 단어 하나만 또박또박 말하세요.</li>
     <li>성조 채점은 음높이 그래프를 분석한 추정치예요. 감기·속삭임·배경 소음이 있으면 정확도가 떨어져요.</li>
     <li>‘단어 인식으로 확인’은 음성인식이 내 발음을 어떤 단어로 알아듣는지 보여줘요. 짧은 한 음절보다 cảm ơn, xin chào 같은 말에서 더 정확해요.</li>
   </ul>
+</section>
+
+<section id="all" hidden>
+  <h2>전체 발음 연습</h2>
+  <p class="hint">베트남어 발음 전체 목록이에요. 연습했으면 ‘연습 완료’, 이번엔 넘어가려면 ‘생략’을 눌러 날짜를 남기세요. 녹음 채점과 단어 인식 기록도 자동으로 연습 날짜에 들어가요.</p>
+  <div class="sum" id="allSum"></div>
+  <div class="filters">
+    <div class="periods" id="catF">
+      <button data-c="all" aria-pressed="true">전체</button>
+      <button data-c="tone" aria-pressed="false">성조</button>
+      <button data-c="v" aria-pressed="false">단모음</button>
+      <button data-c="vv" aria-pressed="false">이중·삼중모음</button>
+      <button data-c="c" aria-pressed="false">첫소리 자음</button>
+      <button data-c="f" aria-pressed="false">받침</button>
+    </div>
+    <div class="frow">
+      <label class="lb" for="stF">보기</label>
+      <select id="stF" class="sm"><option value="all">전체</option><option value="never">한 번도 안 한 것</option><option value="nottoday">오늘 안 한 것</option><option value="skipped">생략한 적 있는 것</option><option value="hi">중요도 높음만</option></select>
+      <label class="lb" for="sortF">정렬</label>
+      <select id="sortF" class="sm"><option value="pri">중요도순</option><option value="order">기본 순서</option><option value="stale">오래 안 한 순</option></select>
+    </div>
+  </div>
+  <p class="khint">중요도는 ① 한국인이 잘 틀리는 정도(★) ② 내가 틀린 비율과 평균 점수 ③ 마지막 연습 후 지난 날짜를 합쳐 계산해요.</p>
+  <div class="items" id="items"></div>
 </section>
 </div>
 
@@ -342,9 +464,11 @@ renderList($("vowelList"),VOWELS);
 renderList($("consList"),CONS);
 $("playAllTones").addEventListener("click",()=>speakSeq(TONES.map(t=>t.syl)));
 
+let cameFrom=null;
 function showTab(name){
   document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected",x.dataset.tab===name));
-  ["tones","vowels","cons","quiz","rec"].forEach(id=>$(id).hidden=(id!==name));
+  ["tones","vowels","cons","quiz","rec","all"].forEach(id=>$(id).hidden=(id!==name));
+  $("backAll").hidden=!(name==="rec"&&cameFrom==="all"); cameFrom=null;
   window.scrollTo({top:0});
 }
 document.querySelectorAll(".tab").forEach(tab=>tab.addEventListener("click",()=>showTab(tab.dataset.tab)));
@@ -461,6 +585,9 @@ $("chips").addEventListener("click",e=>{
 });
 
 function setWord(w){
+  if(![...$("pWord").options].some(o=>o.value===w)){
+    const o=document.createElement("option"); o.value=w; o.textContent=`${w} · ${TONES[toneOf(w.split(" ").pop())].name}`; $("pWord").appendChild(o);
+  }
   target=w; $("pWord").value=w;
   const last=w.split(" ").pop(); const t=TONES[toneOf(last)];
   $("pSyl").textContent=w; $("pSyl").style.color=`var(${t.color})`;
@@ -627,12 +754,98 @@ function drawGraph(A,tgt){
   g.stroke();
 }
 
-/* history */
-const hist=[];
-function addHist(w,s,ok){
-  hist.unshift({w,s,ok,time:new Date()}); if(hist.length>12)hist.pop();
-  $("hist").innerHTML=hist.map(h=>`<div><span><b>${h.w}</b> ${h.ok?"✓":"✗"}</span><span>${h.s}점 · ${h.time.toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"})}</span></div>`).join("");
+/* ---------- history (saved on this device) ---------- */
+const HKEY="vpa.history", DAY=86400000;
+let hist=[];
+try{hist=JSON.parse(localStorage.getItem(HKEY)||"[]"); if(!Array.isArray(hist)) hist=[];}catch(e){hist=[];}
+hist=hist.filter(h=>h&&typeof h.w==="string"&&typeof h.s==="number"&&typeof h.t==="number");
+function saveHist(){try{localStorage.setItem(HKEY,JSON.stringify(hist));}catch(e){}}
+function addHist(w,s,ok,k){
+  const e={w,s,ok,t:Date.now()}; if(k) e.k=k;
+  hist.push(e);
+  if(hist.length>3000) hist.splice(0,hist.length-3000);
+  saveHist(); renderRecords(); if(typeof renderCatalog==="function") renderCatalog();
 }
+let period="7", rview="list";
+const sod=t=>{const d=new Date(t);d.setHours(0,0,0,0);return d.getTime();};
+const wkStart=t=>{const d=new Date(sod(t));d.setDate(d.getDate()-((d.getDay()+6)%7));return d.getTime();};
+const ymd=t=>{const d=new Date(t);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;};
+const avgOf=l=>Math.round(l.reduce((s,h)=>s+h.s,0)/l.length);
+const tier=s=>s>=80?"sc-g":s>=55?"sc-w":"sc-b";
+function periodRange(){
+  const today=sod(Date.now());
+  if(period==="today") return [today,Infinity];
+  if(period==="7") return [today-6*DAY,Infinity];
+  if(period==="30") return [today-29*DAY,Infinity];
+  if(period==="custom"){
+    const f=$("dFrom").value, t=$("dTo").value;
+    let a=f?new Date(f+"T00:00:00").getTime():0, b=t?new Date(t+"T00:00:00").getTime()+DAY-1:Infinity;
+    if(a>b){const x=a;a=b-DAY+1;b=x+DAY-1;}
+    return [a,b];
+  }
+  return [0,Infinity];
+}
+function renderRecords(){
+  const [a,b]=periodRange();
+  const allRows=hist.filter(h=>h.t>=a&&h.t<=b);
+  const rows=allRows.filter(h=>h.k!=="sr");
+  const empty=hist.length?"이 기간에는 기록이 없어요. 기간을 바꿔보세요.":"아직 기록이 없어요. 녹음해서 채점하면 여기에 쌓여요.";
+  $("sum").innerHTML=rows.length?
+    `<span>연습 <b>${rows.length}</b>회</span><span>단어 <b>${new Set(rows.map(h=>h.w)).size}</b>개</span><span>평균 <b class="sc ${tier(avgOf(rows))}">${avgOf(rows)}</b>점</span><span>성조 일치 <b>${Math.round(rows.filter(h=>h.ok).length/rows.length*100)}</b>%</span>`:"";
+  $("vList").hidden=rview!=="list"; $("vAvg").hidden=rview!=="avg";
+  if(rview==="list"){
+    if(!allRows.length){$("vList").innerHTML=`<p class="hint">${empty}</p>`;return;}
+    const sorted=[...allRows].sort((x,y)=>y.t-x.t), shown=sorted.slice(0,300);
+    let html="",day=null;
+    shown.forEach(h=>{
+      const d=sod(h.t);
+      if(d!==day){day=d; html+=`<div class="daylbl">${new Date(d).toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric",weekday:"short"})}</div>`;}
+      const sr=h.k==="sr";
+      html+=`<button class="hrow" data-go="${esc(h.w)}"><span><span class="hw">${esc(h.w)}</span> <span class="hm">${sr?(h.s===100?"🗣 인식 ✓":h.s===50?"🗣 인식 ◐":"🗣 인식 ✗"):(h.ok?"✓ 성조 일치":"✗ 다른 성조")}</span></span><span>${sr?"":`<span class="sc ${tier(h.s)}">${h.s}점</span>`} <span class="hm">${new Date(h.t).toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"})}</span></span></button>`;
+    });
+    if(sorted.length>shown.length) html+=`<p class="hint">최근 ${shown.length}개만 보여요. 기간을 좁혀 보세요.</p>`;
+    $("vList").innerHTML=html; return;
+  }
+  // word averages by week (tone scoring only)
+  if(!rows.length){$("avgEmpty").hidden=false;$("avgEmpty").textContent=empty;$("tblWrap").hidden=true;$("avgNote").hidden=true;return;}
+  $("avgEmpty").hidden=true;$("tblWrap").hidden=false;$("avgNote").hidden=false;
+  const minT=Math.min(...rows.map(h=>h.t)), maxT=Math.max(...rows.map(h=>h.t));
+  const lastW=wkStart(Math.min(b,Math.max(maxT,Date.now()))), firstW=wkStart(Math.max(a,minT));
+  const weeks=[]; for(let w=lastW; w>=firstW&&weeks.length<8; w=wkStart(w-DAY)) weeks.push(w);
+  const more=wkStart(weeks[weeks.length-1]-DAY)>=firstW;
+  const by=new Map(); rows.forEach(h=>{if(!by.has(h.w))by.set(h.w,[]);by.get(h.w).push(h);});
+  const words=[...by.entries()].sort((x,y)=>y[1].length-x[1].length||x[0].localeCompare(y[0],"vi"));
+  const wl=w=>{const d=new Date(w);return `${d.getMonth()+1}/${d.getDate()}주`;};
+  const cell=l=>l.length?`<span class="sc ${tier(avgOf(l))}">${avgOf(l)}</span><small>(${l.length})</small>`:`<span class="hm">–</span>`;
+  let html=`<thead><tr><th>단어</th><th>횟수</th><th>평균</th><th>최고</th>${weeks.map(w=>`<th class="wk">${wl(w)}</th>`).join("")}</tr></thead><tbody>`;
+  words.forEach(([w,l])=>{
+    html+=`<tr><td><button class="wbtn" data-go="${esc(w)}">${esc(w)}</button></td><td>${l.length}</td><td>${cell(l).replace(/<small>.*<\/small>/,"")}</td><td>${Math.max(...l.map(h=>h.s))}</td>`
+      +weeks.map(ws=>`<td class="wk">${cell(l.filter(h=>h.t>=ws&&h.t<ws+7*DAY+3600000&&wkStart(h.t)===ws))}</td>`).join("")+`</tr>`;
+  });
+  $("avgTbl").innerHTML=html+"</tbody>";
+  $("avgNote").textContent="주 단위 평균 점수예요(월요일 시작, 최근 주가 왼쪽). 괄호는 그 주의 연습 횟수예요. 단어를 누르면 바로 따라하기로 이동해요."+(more?" 표에는 최근 8주만 보여요. 평균·최고는 선택한 기간 전체 기준이에요.":"");
+}
+$("periods").addEventListener("click",e=>{
+  const btn=e.target.closest("[data-p]"); if(!btn) return;
+  period=btn.dataset.p;
+  $("periods").querySelectorAll("[data-p]").forEach(x=>x.setAttribute("aria-pressed",x===btn));
+  $("range").hidden=period!=="custom";
+  if(period==="custom"&&!$("dFrom").value&&!$("dTo").value){const t=sod(Date.now());$("dFrom").value=ymd(t-29*DAY);$("dTo").value=ymd(t);}
+  renderRecords();
+});
+["dFrom","dTo"].forEach(id=>$(id).addEventListener("change",renderRecords));
+$("rView").addEventListener("click",e=>{
+  const btn=e.target.closest("[data-v]"); if(!btn) return;
+  rview=btn.dataset.v; $("rView").querySelectorAll("[data-v]").forEach(x=>x.setAttribute("aria-pressed",x===btn));
+  renderRecords();
+});
+$("records").addEventListener("click",e=>{
+  const g=e.target.closest("[data-go]"); if(!g) return;
+  setWord(g.dataset.go); showTab("rec");
+});
+$("clr").addEventListener("click",()=>{$("clrConfirm").hidden=false;$("clr").hidden=true;});
+$("clrNo").addEventListener("click",()=>{$("clrConfirm").hidden=true;$("clr").hidden=false;});
+$("clrYes").addEventListener("click",()=>{hist=[];saveHist();$("clrConfirm").hidden=true;$("clr").hidden=false;renderRecords();});
 
 /* ---------- speech recognition check ---------- */
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -651,12 +864,210 @@ $("srBtn").addEventListener("click",()=>{
     out.innerHTML = hitTop ? `✓ 정확하게 <span class="w">${target}</span>(으)로 알아들었어요.`
       : hitAny ? `◐ 후보 중에는 <span class="w">${target}</span>이(가) 있지만, 가장 먼저 <span class="w">${alts[0]}</span>(으)로 들렸어요.`
       : `✗ <span class="w">${alts[0]||"?"}</span>(으)로 들렸어요. 성조와 모음을 다시 확인해보세요.`;
+    addHist(target, hitTop?100:hitAny?50:0, hitTop, "sr");
   };
   r.onerror=e=>{out.textContent = e.error==="not-allowed"?"마이크 권한이 필요해요.": e.error==="no-speech"?"소리가 들리지 않았어요. 다시 눌러 말해보세요.": e.error==="network"?"음성인식은 인터넷 연결이 필요해요.":"인식하지 못했어요 ("+e.error+").";};
   r.onend=()=>{$("srBtn").disabled=!SR;};
   try{r.start();}catch(e){out.textContent="음성인식을 시작하지 못했어요."; $("srBtn").disabled=false;}
 });
+/* ---------- full pronunciation catalog ---------- */
+const CAT_NAME={tone:"성조",v:"단모음",vv:"이중·삼중모음",c:"첫소리 자음",f:"받침"};
+// [id, cat, letters, hint, examples [[word, meaning]], korean difficulty 1-3, why]
+const CATALOG=[
+ ["t0","tone","ngang","부호 없음 · 평평하게, 중간 높이로 유지",[["ma","귀신"],["ba","셋"],["cô","선생님"]],2,"말끝을 내리는 한국어 습관 때문에 끝까지 평평하게 유지하기 어려워요."],
+ ["t1","tone","huyền","부호 ` · 낮게 시작해 부드럽게 더 내려감",[["mà","그런데"],["bà","할머니"],["làm","하다"]],2,"충분히 내려가지 않으면 ngang과 섞여요."],
+ ["t2","tone","sắc","부호 ´ · 중간에서 높이 쭉 올림",[["má","볼"],["cá","생선"],["có","있다"]],2,"올림이 약하면 ngang으로 들려요."],
+ ["t3","tone","hỏi","부호 ̉ (물음표 모양) · 내려갔다가 살짝 다시 올라옴",[["mả","무덤"],["ở","~에 있다"],["hỏi","묻다"]],3,"ngã·huyền과 가장 많이 헷갈리는 성조예요."],
+ ["t4","tone","ngã","부호 ~ · 올라가다 목에서 끊고 다시 높이",[["mã","말(馬)"],["sữa","우유"],["ngã","넘어지다"]],3,"목을 한 번 끊는 소리가 한국어에 없어요."],
+ ["t5","tone","nặng","부호 . (글자 아래) · 낮게 뚝 떨어뜨리며 짧게 끊음",[["mạ","모"],["mẹ","엄마"],["một","하나"]],3,"짧게 끊지 않으면 huyền처럼 들려요."],
+ ["v-a","v","a","아 (길게)",[["ba","셋"],["cá","생선"]],1,""],
+ ["v-ă","v","ă","아 (짧고 빠르게)",[["ăn","먹다"],["mắt","눈"]],2,"a와 길이만 달라서 구분이 어려워요."],
+ ["v-â","v","â","어 (아주 짧게)",[["cần","필요하다"],["mất","잃다"]],2,"ơ와 길이로만 구분돼요."],
+ ["v-e","v","e","애 (입을 크게 벌려)",[["em","동생, 너"],["xe","차"]],2,"ê(에)와 섞으면 다른 단어가 돼요."],
+ ["v-ê","v","ê","에",[["đêm","밤"],["về","돌아가다"]],1,""],
+ ["v-i","v","i / y","이",[["đi","가다"],["ly","잔"]],1,""],
+ ["v-o","v","o","오와 어 사이 (입을 크게 둥글게)",[["con","자식"],["to","크다"]],2,"한국어 ‘오’로 말하면 ô로 들려요."],
+ ["v-ô","v","ô","오 (입을 작게 오므려)",[["ông","할아버지"],["cô","선생님"]],1,""],
+ ["v-ơ","v","ơ","어 (길게)",[["mơ","꿈꾸다"],["phở","쌀국수"]],1,""],
+ ["v-u","v","u","우",[["thu","가을"],["bún","쌀국수면"]],1,""],
+ ["v-ư","v","ư","으",[["thư","편지"],["từ","단어"]],1,"한국어 ‘으’와 거의 같아요."],
+ ["vv-ie","vv","ia / iê / yê","이어 (뒤를 약하게)",[["tiền","돈"],["bia","맥주"]],2,""],
+ ["vv-uo","vv","ua / uô","우어",[["muốn","원하다"],["mua","사다"]],2,""],
+ ["vv-ưa","vv","ưa / ươ","으어",[["mưa","비"],["nước","물"]],3,"ư에서 ơ로 넘어가는 소리가 한국어에 없어요."],
+ ["vv-ai","vv","ai","아이 (a를 길게)",[["hai","둘"],["tai","귀"]],2,"ay와 구분해야 해요."],
+ ["vv-ay","vv","ay","아이 (짧은 ă + 이)",[["tay","손"],["bay","날다"]],3,"ai와 길이만 달라서 한국인이 가장 많이 섞어요."],
+ ["vv-ao","vv","ao","아오 (a를 길게)",[["cao","높다"],["bao","얼마나"]],2,"au와 구분해야 해요."],
+ ["vv-au","vv","au","아우 (짧은 ă + 우)",[["sau","뒤, 후"],["đau","아프다"]],3,"ao와 길이만 달라서 많이 섞어요."],
+ ["vv-âu","vv","âu","어우 (짧게)",[["đâu","어디"],["câu","문장"]],2,""],
+ ["vv-ây","vv","ây","어이 (짧게)",[["đây","여기"],["mây","구름"]],2,""],
+ ["vv-eo","vv","eo","애오",[["mèo","고양이"],["kẹo","사탕"]],2,""],
+ ["vv-êu","vv","êu","에우",[["nếu","만약"],["kêu","부르다"]],1,""],
+ ["vv-iu","vv","iu","이우",[["chịu","견디다"],["rìu","도끼"]],1,""],
+ ["vv-oi","vv","oi","오이 (o를 크게)",[["nói","말하다"],["đói","배고프다"]],2,"ôi와 입 모양이 달라요."],
+ ["vv-ôi","vv","ôi","오이 (입을 오므려)",[["tôi","나"],["mỗi","각각"]],1,""],
+ ["vv-ơi","vv","ơi","어이",[["ơi","(부르는 말)"],["bơi","수영하다"]],1,""],
+ ["vv-ui","vv","ui","우이",[["vui","기쁘다"],["núi","산"]],1,""],
+ ["vv-ưi","vv","ưi","으이",[["ngửi","냄새 맡다"]],2,""],
+ ["vv-ưu","vv","ưu","으우",[["cứu","구하다"],["hưu","은퇴"]],2,""],
+ ["vv-oa","vv","oa","와",[["hoa","꽃"],["khoa","학과"]],1,""],
+ ["vv-oe","vv","oe","왜",[["khỏe","건강하다"]],1,""],
+ ["vv-uê","vv","uê","웨",[["thuê","빌리다"],["Huế","후에"]],1,""],
+ ["vv-uy","vv","uy","위",[["quý","귀하다"],["thủy","물"]],1,""],
+ ["vv-iêu","vv","iêu / yêu","이에우",[["yêu","사랑하다"],["nhiều","많다"]],2,""],
+ ["vv-uôi","vv","uôi","우오이",[["muối","소금"],["chuối","바나나"]],2,""],
+ ["vv-ươi","vv","ươi","으어이",[["mười","열(10)"],["cười","웃다"]],3,"ươ 소리에 이까지 이어져 어려워요."],
+ ["vv-ươu","vv","ươu","으어우",[["rượu","술"],["hươu","사슴"]],3,"ươ 소리에 우까지 이어져 어려워요."],
+ ["vv-oai","vv","oai","와이",[["ngoài","밖"],["khoai","감자, 고구마"]],2,""],
+ ["vv-oay","vv","oay","와이 (짧게)",[["xoay","돌리다"]],2,""],
+ ["vv-uây","vv","uây","워이 (짧게)",[["khuấy","젓다"]],2,""],
+ ["vv-uyê","vv","uyê","위에",[["chuyện","이야기"],["khuyên","조언하다"]],2,""],
+ ["c-b","c","b","ㅂ (바람 없이 부드럽게)",[["bạn","친구"],["ba","셋"]],2,"ㅍ처럼 세게 내면 안 돼요."],
+ ["c-c","c","c / k / q","ㄲ (바람 없이)",[["cá","생선"],["kem","아이스크림"]],2,"ㅋ처럼 바람을 내면 kh로 들려요."],
+ ["c-ch","c","ch","ㅉ",[["chào","안녕"],["chợ","시장"]],1,""],
+ ["c-tr","c","tr","ㅉ (북부) · 혀를 만 ㅉ (남부)",[["trà","차"],["trường","학교"]],1,""],
+ ["c-d","c","d / gi","z 소리 (북부) · ‘이’ (남부)",[["da","피부"],["gì","무엇"]],2,"한국어 ㅈ보다 부드럽게 떨리는 z예요."],
+ ["c-r","c","r","z 소리 (북부) · 굴리는 r (남부)",[["ra","나가다"],["rau","채소"]],2,"ㄹ로 읽으면 안 돼요."],
+ ["c-đ","c","đ","ㄷ (힘을 주어)",[["đi","가다"],["đẹp","예쁘다"]],1,""],
+ ["c-g","c","g / gh","목에서 흘리는 ㄱ",[["gà","닭"],["ghế","의자"]],2,"ㄱ처럼 막지 말고 목에서 흘려요."],
+ ["c-h","c","h","ㅎ",[["hai","둘"],["học","공부하다"]],1,""],
+ ["c-kh","c","kh","목에서 긁는 ㅋ",[["không","아니다"],["khó","어렵다"]],3,"한국어 ㅋ과 달리 목에서 마찰시켜요."],
+ ["c-l","c","l","ㄹ (혀끝을 윗잇몸에)",[["làm","하다"],["lạnh","춥다"]],1,""],
+ ["c-m","c","m","ㅁ",[["mẹ","엄마"],["mua","사다"]],1,""],
+ ["c-n","c","n","ㄴ",[["nam","남쪽"],["nước","물"]],1,""],
+ ["c-ng","c","ng / ngh","받침 ㅇ 소리로 시작",[["ngủ","자다"],["nghe","듣다"]],3,"한국어에는 ㅇ(ng) 소리로 시작하는 말이 없어요."],
+ ["c-nh","c","nh","냐·녀의 ㄴ",[["nhà","집"],["nhỏ","작다"]],2,""],
+ ["c-ph","c","ph","f (윗니를 아랫입술에)",[["phở","쌀국수"],["phải","맞다"]],2,"ㅍ으로 말하기 쉬워요."],
+ ["c-qu","c","qu","꽈·꿰 소리",[["quá","너무"],["quê","고향"]],1,""],
+ ["c-sx","c","s / x","ㅆ (북부는 둘이 같음)",[["sáu","여섯"],["xin","부탁하다"]],1,""],
+ ["c-t","c","t","ㄸ (바람 없이)",[["tôi","나"],["tên","이름"]],2,"ㅌ처럼 바람을 내면 th로 들려요."],
+ ["c-th","c","th","ㅌ (바람 세게)",[["thích","좋아하다"],["thứ","요일"]],1,""],
+ ["c-v","c","v","v (윗니를 아랫입술에)",[["và","그리고"],["vui","기쁘다"]],2,"ㅂ으로 말하기 쉬워요."],
+ ["c-p","c","p","ㅃ (외래어)",[["pin","배터리"]],1,""],
+ ["f-m","f","-m","ㅁ받침 (입술을 닫음)",[["làm","하다"],["cơm","밥"]],1,""],
+ ["f-n","f","-n","ㄴ받침",[["bạn","친구"],["ăn","먹다"]],1,""],
+ ["f-ng","f","-ng","ㅇ받침",[["sáng","아침"],["tầng","층"]],1,""],
+ ["f-ong","f","-ong / -ông / -ung","ㅇ받침 + 입술을 다물며 볼을 살짝 부풀림",[["không","아니다"],["ông","할아버지"]],3,"입술을 닫지 않으면 어색하게 들려요."],
+ ["f-nh","f","-nh","‘-잉’ (북부, anh은 ‘아잉’)",[["anh","형, 오빠"],["xanh","파랑"]],3,"‘안’이나 ‘앙’으로 말하기 쉬워요."],
+ ["f-p","f","-p","ㅂ받침 (터뜨리지 않음)",[["đẹp","예쁘다"],["họp","회의"]],1,""],
+ ["f-t","f","-t","ㄷ받침 (터뜨리지 않음)",[["một","하나"],["Việt","베트남"]],1,""],
+ ["f-c","f","-c","ㄱ받침 (터뜨리지 않음)",[["các","여러"],["đặc","진하다"]],1,""],
+ ["f-oc","f","-oc / -ôc / -uc","ㄱ받침 + 입술을 다묾",[["học","공부하다"],["cốc","컵"]],2,""],
+ ["f-ch","f","-ch","‘-익’ (북부, ach는 ‘아익’)",[["sách","책"],["thích","좋아하다"]],3,"‘악’으로 말하기 쉬워요."]
+].map(([id,cat,l,hint,ex,k,why],i)=>({id,cat,l,hint,ex,k,why,i}));
+
+const LKEY="vpa.itemlog";
+let itemLog={};
+try{itemLog=JSON.parse(localStorage.getItem(LKEY)||"{}"); if(!itemLog||typeof itemLog!=="object"||Array.isArray(itemLog)) itemLog={};}catch(e){itemLog={};}
+function saveLog(){try{localStorage.setItem(LKEY,JSON.stringify(itemLog));}catch(e){}}
+let catF="all", openIds=new Set(), lastItem=null;
+const fmtD=t=>new Date(t).toLocaleDateString("ko-KR",{month:"numeric",day:"numeric"});
+const fmtDT=t=>new Date(t).toLocaleString("ko-KR",{year:"numeric",month:"numeric",day:"numeric",weekday:"short",hour:"2-digit",minute:"2-digit"});
+
+function itemStats(it){
+  const words=new Set(it.ex.map(e=>e[0].toLowerCase()));
+  const att=hist.filter(h=>words.has(h.w.toLowerCase()));
+  const tone=att.filter(h=>h.k!=="sr");
+  const avg=tone.length?avgOf(tone):null;
+  const fails=att.filter(h=>h.k==="sr"?h.s===0:(!h.ok||h.s<60)).length;
+  const err=att.length?fails/att.length:null;
+  const log=itemLog[it.id]||[];
+  const done=log.filter(x=>x.type==="done"), skips=log.filter(x=>x.type==="skip");
+  const practiceT=[...done.map(x=>x.t),...att.map(h=>h.t)];
+  const lastDone=practiceT.length?Math.max(...practiceT):null;
+  const lastSkip=skips.length?Math.max(...skips.map(x=>x.t)):null;
+  const dayCount=new Map(); practiceT.forEach(t=>{const d=sod(t);dayCount.set(d,(dayCount.get(d)||0)+1);});
+  const today=sod(Date.now());
+  const K=it.k/3;
+  const M=att.length?(0.5*err+0.5*(avg!==null?(100-avg)/100:err)):K*0.5; // no attempts yet: half of the Korean-learner difficulty
+  const R=lastDone?Math.min(1,(Date.now()-lastDone)/(14*DAY)):1;            // 14 days without practice = full weight
+  const P=0.35*K+0.45*M+0.2*R;
+  return {att,tone,avg,err,done,skips,lastDone,lastSkip,dayCount,P,lvl:P>=.6?"hi":P>=.38?"mid":"lo",
+    doneToday:!!lastDone&&sod(lastDone)===today, skipToday:!!lastSkip&&sod(lastSkip)===today};
+}
+const LVL={hi:"높음",mid:"보통",lo:"낮음"};
+
+function renderCatalog(){
+  if(!$("items")) return;
+  const st=$("stF").value, sort=$("sortF").value;
+  const all=CATALOG.map(it=>({it,s:itemStats(it)}));
+  const touched=all.filter(x=>x.s.lastDone).length;
+  $("allSum").innerHTML=`<span>전체 <b>${all.length}</b>개</span><span>연습한 발음 <b>${touched}</b>개</span><span>오늘 연습 <b>${all.filter(x=>x.s.doneToday).length}</b>개</span><span>오늘 생략 <b>${all.filter(x=>x.s.skipToday).length}</b>개</span><span>중요도 높음 <b class="sc-b">${all.filter(x=>x.s.lvl==="hi").length}</b>개</span>`;
+  let list=all.filter(x=>catF==="all"||x.it.cat===catF);
+  if(st==="never") list=list.filter(x=>!x.s.lastDone);
+  if(st==="nottoday") list=list.filter(x=>!x.s.doneToday);
+  if(st==="skipped") list=list.filter(x=>x.s.skips.length);
+  if(st==="hi") list=list.filter(x=>x.s.lvl==="hi");
+  if(sort==="pri") list.sort((a,b)=>b.s.P-a.s.P||a.it.i-b.it.i);
+  else if(sort==="stale") list.sort((a,b)=>(a.s.lastDone||0)-(b.s.lastDone||0)||b.s.P-a.s.P);
+  else list.sort((a,b)=>a.it.i-b.it.i);
+  if(!list.length){$("items").innerHTML=`<p class="hint">조건에 맞는 발음이 없어요. 보기 조건을 바꿔보세요.</p>`;return;}
+  $("items").innerHTML=list.map(({it,s})=>{
+    const open=openIds.has(it.id);
+    const stats=[];
+    stats.push(s.avg!==null?`<span>내 평균 <b class="sc ${tier(s.avg)}">${s.avg}점</b> (${s.tone.length}회)</span>`:`<span>내 평균 <b>–</b></span>`);
+    if(s.err!==null) stats.push(`<span>틀린 비율 <b>${Math.round(s.err*100)}%</b></span>`);
+    stats.push(`<span>연습 <b>${s.dayCount.size}</b>일</span>`);
+    stats.push(`<span>마지막 연습 <b>${s.lastDone?fmtD(s.lastDone):"없음"}</b></span>`);
+    if(s.skips.length) stats.push(`<span>생략 <b>${s.skips.length}</b>회 (마지막 ${fmtD(s.lastSkip)})</span>`);
+    let histHTML="";
+    if(open){
+      const days=[...s.dayCount.entries()].sort((a,b)=>b[0]-a[0]);
+      const ent=[...(itemLog[it.id]||[]).map(x=>({t:x.t,kind:x.type,del:true})),
+                 ...s.att.map(h=>({t:h.t,kind:h.k==="sr"?"sr":"tone",w:h.w,s:h.s}))].sort((a,b)=>b.t-a.t).slice(0,100);
+      histHTML=`<div class="it-hist">
+        <div class="it-days">연습한 날: ${days.length?days.map(([d,n])=>`<b>${fmtD(d)}</b>${n>1?`(${n}회)`:""}`).join(", "):"아직 없어요"}</div>
+        ${ent.length?ent.map(e=>`<div class="lg"><span>${fmtDT(e.t)}</span><span>${
+          e.kind==="done"?`<span class="k-done">✓ 연습 완료</span>`:
+          e.kind==="skip"?`<span class="k-skip">생략</span>`:
+          e.kind==="sr"?`<span class="k-sr">${esc(e.w)} 인식 ${e.s===100?"✓":e.s===50?"◐":"✗"}</span>`:
+          `<span class="k-tone">${esc(e.w)} 채점 <span class="sc ${tier(e.s)}">${e.s}점</span></span>`
+        }${e.del?` <button class="x" data-dellog="${it.id}|${e.t}" aria-label="이 기록 지우기">×</button>`:""}</span></div>`).join(""):`<div class="hm">아직 기록이 없어요.</div>`}
+      </div>`;
+    }
+    return `<article class="it p-${s.lvl}" id="it-${it.id}">
+      <div class="it-top"><div class="it-l">${esc(it.l)}</div>
+        <div class="it-main"><div class="it-hint">${esc(it.hint)}</div>
+          <div class="tags"><span class="pri p-${s.lvl}">중요도 ${LVL[s.lvl]}</span><span class="tag">${CAT_NAME[it.cat]}</span><span class="tag kr" title="한국인이 잘 틀리는 정도">한국인 주의 ${"★".repeat(it.k)}${"☆".repeat(3-it.k)}</span>${s.doneToday?`<span class="tag today">오늘 연습함</span>`:""}${s.skipToday?`<span class="tag skiptoday">오늘 생략</span>`:""}</div>
+        </div></div>
+      ${it.why?`<div class="it-why">${esc(it.why)}</div>`:""}
+      <div class="it-ex">${it.ex.map(([w,m])=>`<span class="exw"><button data-say="${esc(w)}">▶ ${esc(w)}<small>${esc(m)}</small></button><button class="m" data-ipr="${it.id}|${esc(w)}" aria-label="${esc(w)} 따라하기">🎙</button></span>`).join("")}</div>
+      <div class="it-stats">${stats.join("")}</div>
+      <div class="it-act">
+        <button class="act ok" data-done="${it.id}">✓ 연습 완료</button>
+        <button class="act" data-skip="${it.id}">생략</button>
+        <button class="act more" data-open="${it.id}" aria-expanded="${open}">기록 ${open?"▴":"▾"}</button>
+      </div>${histHTML}
+    </article>`;
+  }).join("");
+}
+function logItem(id,type){
+  (itemLog[id]=itemLog[id]||[]).push({t:Date.now(),type});
+  if(itemLog[id].length>500) itemLog[id].splice(0,itemLog[id].length-500);
+  saveLog(); renderCatalog();
+}
+$("items").addEventListener("click",e=>{
+  const d=e.target.closest("[data-done]"), k=e.target.closest("[data-skip]"), o=e.target.closest("[data-open]"),
+        pr=e.target.closest("[data-ipr]"), dl=e.target.closest("[data-dellog]");
+  if(d) logItem(d.dataset.done,"done");
+  else if(k) logItem(k.dataset.skip,"skip");
+  else if(o){const id=o.dataset.open; openIds.has(id)?openIds.delete(id):openIds.add(id); renderCatalog();}
+  else if(pr){const [id,w]=pr.dataset.ipr.split("|"); lastItem=id; setWord(w); cameFrom="all"; showTab("rec");}
+  else if(dl){const [id,t]=dl.dataset.dellog.split("|"); itemLog[id]=(itemLog[id]||[]).filter(x=>x.t!==+t); saveLog(); renderCatalog();}
+});
+$("catF").addEventListener("click",e=>{
+  const b=e.target.closest("[data-c]"); if(!b) return;
+  catF=b.dataset.c; $("catF").querySelectorAll("[data-c]").forEach(x=>x.setAttribute("aria-pressed",x===b)); renderCatalog();
+});
+["stF","sortF"].forEach(id=>$(id).addEventListener("change",renderCatalog));
+$("backAll").addEventListener("click",()=>{
+  showTab("all"); renderCatalog();
+  if(lastItem){const el=$("it-"+lastItem); if(el) el.scrollIntoView({block:"center"});}
+});
+document.querySelector('.tab[data-tab="all"]').addEventListener("click",renderCatalog);
+
 setWord("ma");
+renderRecords();
+renderCatalog();
 </script>
 </body>
 </html>
