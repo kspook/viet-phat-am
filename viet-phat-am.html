@@ -273,6 +273,7 @@ select.sm{width:auto;font:600 .85rem var(--f-body);padding:5px 8px}
       <button class="recbtn" id="recBtn"><span class="dot"></span><span id="recTxt">녹음 시작</span></button>
       <button class="ghost" id="refBtn">▶ 원어민</button>
       <button class="ghost" id="mineBtn" disabled>▶ 내 녹음</button>
+      <button class="ghost" id="dlBtn" disabled>⬇ 내 녹음 저장</button>
     </div>
     <div class="meter" aria-hidden="true"><i id="meter"></i></div>
     <div class="notice" id="recMsg" hidden></div>
@@ -594,13 +595,13 @@ function setWord(w){
   $("pTone").textContent=(w.includes(" ")?"마지막 음절 ":"")+`성조: ${t.name}`+(w.includes(" ")?" (여러 음절은 마지막 음절을 채점해요)":"");
   $("pDesc").textContent=t.desc; $("pCt").innerHTML=contour(t);
   const mn=meanOf(w); $("pMean").textContent=mn?`뜻: ${mn}`:"";
-  $("res").hidden=true; $("srOut").hidden=true; $("mineBtn").disabled=true; mineURL=null;
+  $("res").hidden=true; $("srOut").hidden=true; $("mineBtn").disabled=true; mineURL=null; $("dlBtn").disabled=true; mineBlob=null;
 }
 $("pWord").addEventListener("change",e=>setWord(e.target.value));
 $("refBtn").addEventListener("click",()=>speak(target));
 
 /* ---------- recording + pitch analysis ---------- */
-let stream=null,actx=null,mediaRec=null,chunks=[],mineURL=null,recording=false,raf=0,frames=[],t0=0,lastVoice=0,srcNode=null,analyser=null,mineAudio=null;
+let stream=null,actx=null,mediaRec=null,chunks=[],mineURL=null,recording=false,raf=0,frames=[],t0=0,lastVoice=0,srcNode=null,analyser=null,mineAudio=null,mineBlob=null,mineWord="",mineTime=0,mineScore=null;
 const MAX_MS=3000;
 function msg(t){const m=$("recMsg"); if(!t){m.hidden=true;return;} m.hidden=false; m.textContent=t;}
 
@@ -635,7 +636,7 @@ async function startRec(){
   analyser=actx.createAnalyser(); analyser.fftSize=2048; srcNode.connect(analyser);
   chunks=[];
   try{mediaRec=new MediaRecorder(stream); mediaRec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
-    mediaRec.onstop=()=>{const blob=new Blob(chunks,{type:mediaRec.mimeType||"audio/webm"}); if(mineURL)URL.revokeObjectURL(mineURL); mineURL=URL.createObjectURL(blob); $("mineBtn").disabled=false;};
+    mediaRec.onstop=()=>{const blob=new Blob(chunks,{type:mediaRec.mimeType||"audio/webm"}); if(mineURL)URL.revokeObjectURL(mineURL); mineURL=URL.createObjectURL(blob); mineBlob=blob; mineWord=target; mineTime=Date.now(); $("mineBtn").disabled=false; $("dlBtn").disabled=false;};
     mediaRec.start();}catch(e){mediaRec=null;}
   frames=[]; t0=performance.now(); lastVoice=0; recording=true;
   $("recBtn").classList.add("on"); $("recTxt").textContent="녹음 중… 탭하면 정지";
@@ -661,6 +662,35 @@ function stopRec(){
 }
 $("recBtn").addEventListener("click",()=>recording?stopRec():startRec());
 $("mineBtn").addEventListener("click",()=>{if(!mineURL)return; if(mineAudio)mineAudio.pause(); mineAudio=new Audio(mineURL); mineAudio.play().catch(()=>{});});
+
+/* download my recording as WAV (plays everywhere); falls back to the original file */
+function toWav(buf){
+  const ch=buf.numberOfChannels, n=buf.length, sr=buf.sampleRate, mono=new Float32Array(n);
+  for(let c=0;c<ch;c++){const d=buf.getChannelData(c); for(let i=0;i<n;i++) mono[i]+=d[i]/ch;}
+  const out=new DataView(new ArrayBuffer(44+n*2)), str=(o,t)=>{for(let i=0;i<t.length;i++) out.setUint8(o+i,t.charCodeAt(i));};
+  str(0,"RIFF"); out.setUint32(4,36+n*2,true); str(8,"WAVE"); str(12,"fmt "); out.setUint32(16,16,true);
+  out.setUint16(20,1,true); out.setUint16(22,1,true); out.setUint32(24,sr,true); out.setUint32(28,sr*2,true);
+  out.setUint16(32,2,true); out.setUint16(34,16,true); str(36,"data"); out.setUint32(40,n*2,true);
+  for(let i=0;i<n;i++){const v=Math.max(-1,Math.min(1,mono[i])); out.setInt16(44+i*2,v<0?v*0x8000:v*0x7fff,true);}
+  return new Blob([out],{type:"audio/wav"});
+}
+function decode(ab){
+  return new Promise((res,rej)=>{const p=actx.decodeAudioData(ab,res,rej); if(p&&p.then) p.then(res,rej);});
+}
+$("dlBtn").addEventListener("click",async()=>{
+  if(!mineBlob) return;
+  const btn=$("dlBtn"); btn.disabled=true; btn.textContent="저장 준비 중…";
+  const d=new Date(mineTime), pad=x=>String(x).padStart(2,"0");
+  const stamp=`${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;
+  const ascii=mineWord.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D").replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"")||"word";
+  const base=`viet_${ascii}_${stamp}${mineScore!==null?`_${mineScore}pt`:""}`; // ASCII-only: some browsers drop non-ASCII download names
+  let file=mineBlob, ext=(mineBlob.type.includes("mp4")?"m4a":mineBlob.type.includes("ogg")?"ogg":"webm");
+  try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)(); file=toWav(await decode(await mineBlob.arrayBuffer())); ext="wav"; }catch(e){}
+  const url=URL.createObjectURL(file), a=document.createElement("a");
+  a.href=url; a.download=`${base}.${ext}`; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),10000);
+  btn.textContent="⬇ 내 녹음 저장"; btn.disabled=false;
+});
 
 function median(a){const s=[...a].sort((p,q)=>p-q);return s[s.length>>1];}
 function analyze(fr){
@@ -713,7 +743,7 @@ function score(){
   const A=analyze(frames), tgt=toneOf(target.split(" ").pop());
   $("res").hidden=false;
   if(!A){
-    $("rScore").textContent="–"; $("rScore").style.color=css("--muted");
+    mineScore=null; $("rScore").textContent="–"; $("rScore").style.color=css("--muted");
     $("rLabel").textContent="목소리가 잘 안 들렸어요";
     $("rFb").textContent="조금 더 크게, 모음을 길게 끌어서 다시 녹음해보세요."; $("rStats").textContent="";
     drawGraph(null,tgt); return;
@@ -722,7 +752,7 @@ function score(){
   let s = det===tgt ? Math.round(72+28*Math.min(1,fit[tgt]/.8)) : Math.round(68*fit[tgt]/mx);
   s=Math.max(5,Math.min(100,s));
   const col = s>=80?"--good":s>=55?"--warn":"--bad";
-  $("rScore").textContent=s; $("rScore").style.color=css(col);
+  $("rScore").textContent=s; $("rScore").style.color=css(col); mineScore=s;
   $("rLabel").textContent = det===tgt ? `${TONES[tgt].name} 성조로 들려요` : `${TONES[det].name}처럼 들려요 (목표: ${TONES[tgt].name})`;
   $("rFb").textContent = det===tgt ? (s>=90?"아주 좋아요! 이 느낌을 기억하세요. ":"좋아요. 그래프 모양을 목표에 더 가깝게 다듬어 보세요. ")+TONES[tgt].fix : TONES[tgt].fix;
   const r=A.rise; $("rStats").textContent=`음높이 변화 ${r>=0?"+":""}${r.toFixed(1)}반음 · 길이 ${A.dur.toFixed(2)}초${A.dip>1?` · 중간 하강 ${A.dip.toFixed(1)}반음`:""}${A.brk?" · 목 끊김 있음":""}`;
