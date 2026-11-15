@@ -122,6 +122,13 @@ canvas#graph{width:100%;height:180px;display:block;border-radius:10px;background
 .records{margin-top:22px;display:flex;flex-direction:column;gap:10px}
 .rhead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .rhead h2{margin:0}
+.refbox{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:12px;background:var(--bg);border:1px solid var(--line)}
+.refstate{font-size:.85rem;font-weight:600}
+.refstate.mine{color:var(--accent)}
+.ghost.sm2{font-size:.82rem;padding:6px 11px}
+.ghost.sm2.on{border-color:var(--rec);color:var(--rec)}
+.filebtn{display:inline-flex;align-items:center;cursor:pointer}
+.khint a{color:var(--accent)}
 .dialrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
 .south-read{font:400 .78rem var(--f-body);color:var(--accent);margin-left:4px}
 #pSouth{font-size:.85rem;color:var(--accent);font-weight:600}
@@ -214,7 +221,8 @@ select.sm{width:auto;font:600 .85rem var(--f-body);padding:5px 8px}
   <div class="dialrow"><span class="lb">발음 기준</span>
     <div class="seg" id="dial"><button data-d="north" aria-pressed="true">북부 (하노이)</button><button data-d="south" aria-pressed="false">남부 (호치민)</button></div>
   </div>
-  <div class="notice" id="southNote" hidden>남부 모드예요. 성조 채점이 남부 기준으로 바뀌어요: <b>hỏi와 ngã는 같은 소리</b>(내려갔다 높이 올라감)로, <b>nặng</b>은 낮게 살짝 내려갔다 올라오는 모양으로 채점해요. 자음·받침 설명과 ‘남부 ≈’ 한글 발음도 남부식으로 바뀌어요. 단, <b>듣기 음성은 기기에 들어 있는 음성이라 대부분 북부 발음</b>이에요. v·d·gi 같은 소리는 ‘남부 ≈’ 표시를 따라 하세요.</div>
+  <div class="dialrow"><label class="lb" for="voiceSel">듣기 음성</label><select id="voiceSel" class="sm"><option value="">기기 기본 베트남어 음성</option></select></div>
+  <div class="notice" id="southNote" hidden>남부 모드예요. 성조 채점이 남부 기준으로 바뀌어요: <b>hỏi와 ngã는 같은 소리</b>(내려갔다 높이 올라감)로, <b>nặng</b>은 낮게 살짝 내려갔다 올라오는 모양으로 채점해요. 자음·받침 설명과 ‘남부 ≈’ 한글 발음도 남부식으로 바뀌어요. 단, <b>기기 음성은 대부분 북부 발음</b>이에요. ‘듣기 음성’에서 다른 베트남어 음성을 골라 보거나, 녹음 채점 화면에서 <b>남부 원어민 소리를 직접 등록</b>하면 ‘▶ 원어민’이 그 소리로 재생돼요.</div>
   <div class="notice" id="voiceNote" hidden></div>
 </header>
 
@@ -291,6 +299,17 @@ select.sm{width:auto;font:600 .85rem var(--f-body);padding:5px 8px}
       <button class="ghost" id="refBtn">▶ 원어민</button>
       <button class="ghost" id="mineBtn" disabled>▶ 내 녹음</button>
       <button class="ghost" id="dlBtn" disabled>⬇ 내 녹음 저장</button>
+    </div>
+    <div class="refbox">
+      <div class="refstate" id="refState"></div>
+      <div class="row-btns" style="margin:0">
+        <button class="ghost sm2" id="refRec">🎤 원어민 소리 녹음해서 등록</button>
+        <label class="ghost sm2 filebtn" for="refFile">📁 파일로 등록</label>
+        <input type="file" id="refFile" accept="audio/*" hidden>
+        <button class="linkbtn danger" id="refDel" hidden>등록한 소리 지우기</button>
+      </div>
+      <div class="khint">남부 선생님·친구에게 말해 달라고 하거나, 사전 사이트의 원어민 소리를 다른 기기로 틀어 녹음하세요. 원어민 발음 찾아 듣기:
+        <a id="lnkWk" target="_blank" rel="noopener">Wiktionary</a> (북부·남부 발음 기호) · <a id="lnkFv" target="_blank" rel="noopener">Forvo</a> (원어민 녹음)</div>
     </div>
     <div class="meter" aria-hidden="true"><i id="meter"></i></div>
     <div class="notice" id="recMsg" hidden></div>
@@ -429,14 +448,42 @@ const synth=window.speechSynthesis;
 function pickVoice(){
   if(!synth) return;
   const vs=synth.getVoices();
-  viVoice=vs.find(v=>/^vi/i.test(v.lang))||null;
+  const vi=vs.filter(v=>/^vi/i.test(v.lang));
+  let saved=""; try{saved=localStorage.getItem("vpa.voice")||"";}catch(e){}
+  viVoice=vi.find(v=>v.name===saved)||vi[0]||null;
+  const sel=$("voiceSel");
+  if(sel){ sel.innerHTML=`<option value="">기기 기본 베트남어 음성</option>`+vi.map(v=>`<option value="${esc(v.name)}">${esc(v.name)}${v.localService?"":" (온라인)"}</option>`).join("");
+    sel.value=vi.some(v=>v.name===saved)?saved:""; sel.disabled=!vi.length; }
   const note=$("voiceNote");
   if(vs.length && !viVoice){note.hidden=false;
     note.textContent="이 기기에서 베트남어 음성을 찾지 못했어요. 휴대폰 설정의 ‘텍스트 음성 변환(TTS)’에서 베트남어(Tiếng Việt) 음성을 추가하면 정확한 소리로 들을 수 있어요.";}
   else note.hidden=true;
 }
-if(synth){pickVoice(); synth.onvoiceschanged=pickVoice;}
+$("voiceSel").addEventListener("change",e=>{
+  try{localStorage.setItem("vpa.voice",e.target.value);}catch(err){}
+  pickVoice(); if(e.target.value) speak("xin chào");
+});
+/* registered native recordings (saved in this browser), keyed by dialect + word */
+const REFS={db:null,keys:new Set(),
+  open(){return new Promise((res,rej)=>{ if(this.db) return res(this.db); if(!window.indexedDB) return rej(new Error("no idb"));
+    const r=indexedDB.open("vpa-refs",1); r.onupgradeneeded=()=>r.result.createObjectStore("refs"); r.onsuccess=()=>{this.db=r.result;res(this.db);}; r.onerror=()=>rej(r.error);});},
+  async tx(mode,fn){const db=await this.open(); return new Promise((res,rej)=>{const st=db.transaction("refs",mode).objectStore("refs"); const q=fn(st); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error);});},
+  key(w){return dialect+"|"+w.normalize("NFC").toLowerCase().trim();},
+  async load(){try{(await this.tx("readonly",st=>st.getAllKeys())).forEach(k=>this.keys.add(k));}catch(e){}},
+  has(w){return this.keys.has(this.key(w));},
+  async get(w){try{return await this.tx("readonly",st=>st.get(this.key(w)));}catch(e){return null;}},
+  async set(w,v){await this.tx("readwrite",st=>st.put(v,this.key(w))); this.keys.add(this.key(w));},
+  async del(w){await this.tx("readwrite",st=>st.delete(this.key(w))); this.keys.delete(this.key(w));}
+};
+let refAudio=null;
+async function playRef(w){
+  const v=await REFS.get(w); if(!v||!v.blob) return false;
+  if(synth) synth.cancel(); if(refAudio) refAudio.pause();
+  const url=URL.createObjectURL(v.blob); refAudio=new Audio(url); refAudio.playbackRate=rate<0.7?0.8:1;
+  refAudio.onended=()=>URL.revokeObjectURL(url); refAudio.play().catch(()=>{}); return true;
+}
 function speak(text,onend){
+  if(REFS.has(text)){ playRef(text); return; }
   if(!synth) return;
   synth.cancel();
   const u=new SpeechSynthesisUtterance(text);
@@ -638,10 +685,47 @@ function setWord(w){
   const sr=w.split(" ").map(x=>southRead(x)||"").filter(Boolean);
   $("pSouth").textContent=isSouth()&&sr.length?`남부 발음 ≈ ${w.split(" ").map(x=>southRead(x)||x).join(" ")}`:"";
   showConsAvail(w);
+  if(typeof refreshRef==="function"&&$("refState")) refreshRef();
   $("res").hidden=true; $("srOut").hidden=true; $("mineBtn").disabled=true; mineURL=null; $("dlBtn").disabled=true; mineBlob=null; $("rCons").hidden=true;
 }
 $("pWord").addEventListener("change",e=>setWord(e.target.value));
 $("refBtn").addEventListener("click",()=>speak(target));
+function refreshRef(){
+  const mine=REFS.has(target);
+  $("refState").className="refstate"+(mine?" mine":"");
+  $("refState").textContent = mine ? `‘▶ 원어민’: 내가 등록한 ${isSouth()?"남부":"북부"} 원어민 소리로 재생해요`
+    : `‘▶ 원어민’: 기기 음성으로 재생해요${isSouth()?" (대부분 북부 발음이에요)":""}`;
+  $("refDel").hidden=!mine;
+  $("refBtn").textContent = mine ? "▶ 원어민 (등록)" : "▶ 원어민";
+  const w=encodeURIComponent(target.normalize("NFC").toLowerCase());
+  $("lnkWk").href=`https://en.wiktionary.org/wiki/${w}#Vietnamese`;
+  $("lnkFv").href=`https://forvo.com/word/${w}/#vi`;
+}
+async function saveRef(blob,src){
+  try{ await REFS.set(target,{blob,type:blob.type,src,t:Date.now()}); refreshRef(); renderCatalog(); playRef(target); }
+  catch(e){ msg("소리를 저장하지 못했어요. 브라우저 저장 공간을 확인해 주세요."); }
+}
+let refRecState=null;
+$("refRec").addEventListener("click",async()=>{
+  if(refRecState){ refRecState.rec.stop(); return; }
+  if(recording) return;
+  if(!navigator.mediaDevices||!window.MediaRecorder){ msg("이 브라우저에서는 녹음할 수 없어요. ‘파일로 등록’을 이용해 주세요."); return; }
+  let st; try{ st=await navigator.mediaDevices.getUserMedia({audio:true}); }catch(e){ msg("마이크 권한이 필요해요."); return; }
+  const rec=new MediaRecorder(st), ch=[];
+  rec.ondataavailable=e=>{if(e.data.size)ch.push(e.data);};
+  rec.onstop=()=>{ st.getTracks().forEach(t=>t.stop()); clearTimeout(refRecState&&refRecState.timer); refRecState=null;
+    $("refRec").classList.remove("on"); $("refRec").textContent="🎤 원어민 소리 녹음해서 등록";
+    const b=new Blob(ch,{type:rec.mimeType||"audio/webm"}); if(b.size>1000) saveRef(b,"rec"); };
+  rec.start(); refRecState={rec,timer:setTimeout(()=>rec.state!=="inactive"&&rec.stop(),5000)};
+  $("refRec").classList.add("on"); $("refRec").textContent="● 녹음 중… 탭하면 저장 (최대 5초)";
+});
+$("refFile").addEventListener("change",e=>{
+  const f=e.target.files&&e.target.files[0]; e.target.value=""; if(!f) return;
+  if(!/^audio\//.test(f.type)&&!/\.(mp3|m4a|wav|ogg|webm|aac)$/i.test(f.name)){ msg("오디오 파일(mp3, m4a, wav 등)을 골라 주세요."); return; }
+  if(f.size>5*1024*1024){ msg("5MB 이하의 짧은 파일을 골라 주세요."); return; }
+  saveRef(f,"file");
+});
+$("refDel").addEventListener("click",async()=>{ try{await REFS.del(target);}catch(e){} refreshRef(); renderCatalog(); });
 
 /* ---------- recording + pitch analysis ---------- */
 let noiseRms=[],peakRms=0,stream=null,actx=null,mediaRec=null,chunks=[],mineURL=null,recording=false,raf=0,frames=[],t0=0,lastVoice=0,srcNode=null,analyser=null,mineAudio=null,mineBlob=null,mineWord="",mineTime=0,mineScore=null;
@@ -1262,7 +1346,7 @@ function renderCatalog(){
           <div class="tags"><span class="pri p-${s.lvl}">중요도 ${LVL[s.lvl]}</span><span class="tag">${CAT_NAME[it.cat]}</span><span class="tag kr" title="한국인이 잘 틀리는 정도">한국인 주의 ${"★".repeat(it.k)}${"☆".repeat(3-it.k)}</span>${["c-đ","c-b","c-t","c-th","c-c"].includes(it.id)?`<span class="tag cc">자음 점검 가능</span>`:""}${s.doneToday?`<span class="tag today">오늘 연습함</span>`:""}${s.skipToday?`<span class="tag skiptoday">오늘 생략</span>`:""}</div>
         </div></div>
       ${it.why?`<div class="it-why">${esc(it.why)}</div>`:""}
-      <div class="it-ex">${it.ex.map(([w,m])=>`<span class="exw"><button data-say="${esc(w)}">▶ ${esc(w)}<small>${esc(m)}</small>${southRead(w)?`<span class="south-read">남부 ≈ ${esc(southRead(w))}</span>`:""}</button><button class="m" data-ipr="${it.id}|${esc(w)}" aria-label="${esc(w)} 따라하기">🎙</button></span>`).join("")}</div>
+      <div class="it-ex">${it.ex.map(([w,m])=>`<span class="exw"><button data-say="${esc(w)}">${REFS.has(w)?"🎧":"▶"} ${esc(w)}<small>${esc(m)}</small>${southRead(w)?`<span class="south-read">남부 ≈ ${esc(southRead(w))}</span>`:""}</button><button class="m" data-ipr="${it.id}|${esc(w)}" aria-label="${esc(w)} 따라하기">🎙</button></span>`).join("")}</div>
       <div class="it-stats">${stats.join("")}</div>
       <div class="it-act">
         <button class="act ok" data-done="${it.id}">✓ 연습 완료</button>
@@ -1309,9 +1393,11 @@ $("dial").addEventListener("click",e=>{
   dialect=b.dataset.d; try{localStorage.setItem("vpa.dialect",dialect);}catch(err){}
   applyDialect();
 });
+if(synth){pickVoice(); synth.onvoiceschanged=pickVoice;}
 setWord("ma");
 renderRecords();
 applyDialect();
+REFS.load().then(()=>{refreshRef(); renderCatalog();});
 </script>
 </body>
 </html>
