@@ -614,7 +614,7 @@ $("pWord").addEventListener("change",e=>setWord(e.target.value));
 $("refBtn").addEventListener("click",()=>speak(target));
 
 /* ---------- recording + pitch analysis ---------- */
-let stream=null,actx=null,mediaRec=null,chunks=[],mineURL=null,recording=false,raf=0,frames=[],t0=0,lastVoice=0,srcNode=null,analyser=null,mineAudio=null,mineBlob=null,mineWord="",mineTime=0,mineScore=null;
+let noiseRms=[],peakRms=0,stream=null,actx=null,mediaRec=null,chunks=[],mineURL=null,recording=false,raf=0,frames=[],t0=0,lastVoice=0,srcNode=null,analyser=null,mineAudio=null,mineBlob=null,mineWord="",mineTime=0,mineScore=null;
 const MAX_MS=3000;
 function msg(t){const m=$("recMsg"); if(!t){m.hidden=true;return;} m.hidden=false; m.textContent=t;}
 
@@ -651,14 +651,19 @@ async function startRec(){
   try{mediaRec=new MediaRecorder(stream); mediaRec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
     mediaRec.onstop=()=>{const blob=new Blob(chunks,{type:mediaRec.mimeType||"audio/webm"}); if(mineURL)URL.revokeObjectURL(mineURL); mineURL=URL.createObjectURL(blob); mineBlob=blob; mineWord=target; mineTime=Date.now(); $("mineBtn").disabled=false; $("dlBtn").disabled=false; if(!$("res").hidden&&mineScore!==null) checkConsonant(blob,mineWord); else $("rCons").hidden=true;};
     mediaRec.start();}catch(e){mediaRec=null;}
-  frames=[]; t0=performance.now(); lastVoice=0; recording=true;
+  frames=[]; t0=performance.now(); lastVoice=0; recording=true; noiseRms=[]; peakRms=0;
   $("recBtn").classList.add("on"); $("recTxt").textContent="녹음 중… 탭하면 정지";
   const buf=new Float32Array(analyser.fftSize);
   const loop=()=>{
     if(!recording) return;
     analyser.getFloatTimeDomainData(buf);
     const t=performance.now()-t0, r=detectPitch(buf,actx.sampleRate);
-    frames.push({t,f:r.f}); if(r.f) lastVoice=t;
+    if(frames.length<15) noiseRms.push(r.rms);                       // first ~0.25s: background level
+    const noise=noiseRms.length?[...noiseRms].sort((p,q)=>p-q)[Math.floor(noiseRms.length*.3)]:0;
+    const f=(r.f&&r.rms>Math.max(0.012,noise*2.5))?r.f:null;           // ignore "pitch" found in background noise
+    if(f) peakRms=Math.max(peakRms,r.rms);
+    frames.push({t,f,rms:r.rms,noise});
+    if(f&&r.rms>0.3*peakRms) lastVoice=t;                              // only strong voice keeps the recording going
     $("meter").style.width=Math.min(100,r.rms*600)+"%";
     if(t>MAX_MS || (lastVoice&&t-lastVoice>600)) {stopRec();return;}
     raf=requestAnimationFrame(loop);
@@ -795,7 +800,17 @@ $("dlBtn").addEventListener("click",async()=>{
 
 function median(a){const s=[...a].sort((p,q)=>p-q);return s[s.length>>1];}
 function analyze(fr){
-  // keep voiced span, convert to semitones, smooth, fix octave jumps
+  // drop weak voiced frames (background noise), keep voiced span, convert to semitones, smooth, fix octave jumps
+  const pk=Math.max(0,...fr.filter(f=>f.f).map(f=>f.rms||0));
+  if(pk>0){
+    fr=fr.map(f=>f.f&&(f.rms||0)<0.15*pk?{...f,f:null}:f);
+    // group voiced frames into runs (gaps up to 100ms); drop runs that never get loud (noise blips)
+    let run=[],last=-1e9; const runs=[];
+    fr.forEach((f,i)=>{ if(!f.f) return; if(f.t-last>100&&run.length){runs.push(run);run=[];} run.push(i); last=f.t; });
+    if(run.length) runs.push(run);
+    const drop=new Set(); runs.forEach(r=>{ if(Math.max(...r.map(i=>fr[i].rms||0))<0.5*pk||r.length<3) r.forEach(i=>drop.add(i)); });
+    fr=fr.map((f,i)=>drop.has(i)?{...f,f:null}:f);
+  }
   let a=fr.findIndex(f=>f.f), b=fr.length-1-[...fr].reverse().findIndex(f=>f.f);
   if(a<0) return null;
   // use the last voiced run cluster for multi-syllable phrases: analyze final syllable
@@ -849,13 +864,24 @@ function score(){
     $("rFb").textContent="조금 더 크게, 모음을 길게 끌어서 다시 녹음해보세요."; $("rStats").textContent="";
     drawGraph(null,tgt); return;
   }
-  const {fit,det}=classify(A), mx=Math.max(...fit);
+  let {fit,det}=classify(A), mx=Math.max(...fit);
   let s = det===tgt ? Math.round(72+28*Math.min(1,fit[tgt]/.8)) : Math.round(68*fit[tgt]/mx);
+  // syllables ending in -p/-t/-c/-ch can only carry sắc or nặng, and both are short: judge by direction only
+  const lastSyl=stripTone(target.split(" ").pop()).toLowerCase(), checked=/(p|t|c|ch)$/.test(lastSyl)&&(tgt===2||tgt===5);
+  if(checked){
+    det = A.rise>-1 ? 2 : 5;
+    const margin = tgt===2 ? (A.rise+1)/3 : (-A.rise-1)/3;
+    s = det===tgt ? Math.round(75+25*Math.min(1,Math.max(0,margin))) : Math.round(45*Math.max(0,1+margin));
+  }
   s=Math.max(5,Math.min(100,s));
   const col = s>=80?"--good":s>=55?"--warn":"--bad";
   $("rScore").textContent=s; $("rScore").style.color=css(col); mineScore=s;
   $("rLabel").textContent = det===tgt ? `${TONES[tgt].name} 성조로 들려요` : `${TONES[det].name}처럼 들려요 (목표: ${TONES[tgt].name})`;
-  $("rFb").textContent = det===tgt ? (s>=90?"아주 좋아요! 이 느낌을 기억하세요. ":"좋아요. 그래프 모양을 목표에 더 가깝게 다듬어 보세요. ")+TONES[tgt].fix : TONES[tgt].fix;
+  const fixTxt = checked ? (tgt===2?"-p·-t·-c로 끝나는 단어의 sắc는 짧게 끊겨요. 높은 음에서 짧고 날카롭게 살짝 올리며 끊으세요.":"-p·-t·-c로 끝나는 단어의 nặng은 낮게 뚝 떨어뜨리며 짧게 끊으세요.") : TONES[tgt].fix;
+  const noiseLv=Math.max(...frames.map(f=>f.noise||0)), loud=peakRms>0&&noiseLv>0&&peakRms/noiseLv<8;
+  $("rFb").textContent = (det===tgt ? (s>=90?"아주 좋아요! 이 느낌을 기억하세요. ":"좋아요. 그래프 모양을 목표에 더 가깝게 다듬어 보세요. ")+fixTxt : fixTxt)
+    + (checked?" (받침 -p·-t·-c 단어는 오르내림 방향으로만 채점해요.)":"")
+    + (loud?" ⚠ 주변 소음이 커서 결과가 부정확할 수 있어요. 조용한 곳에서 다시 해보세요.":"");
   const r=A.rise; $("rStats").textContent=`음높이 변화 ${r>=0?"+":""}${r.toFixed(1)}반음 · 길이 ${A.dur.toFixed(2)}초${A.dip>1?` · 중간 하강 ${A.dip.toFixed(1)}반음`:""}${A.brk?" · 목 끊김 있음":""}`;
   drawGraph(A,tgt);
   addHist(target,s,det===tgt);
