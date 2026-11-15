@@ -122,6 +122,9 @@ canvas#graph{width:100%;height:180px;display:block;border-radius:10px;background
 .records{margin-top:22px;display:flex;flex-direction:column;gap:10px}
 .rhead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .rhead h2{margin:0}
+.dialrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+.south-read{font:400 .78rem var(--f-body);color:var(--accent);margin-left:4px}
+#pSouth{font-size:.85rem;color:var(--accent);font-weight:600}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .seg button{font:600 .85rem var(--f-body);border:none;background:var(--surface);color:var(--muted);padding:6px 12px;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
@@ -207,7 +210,11 @@ select.sm{width:auto;font:600 .85rem var(--f-body);padding:5px 8px}
 <div class="wrap">
 <header>
   <h1>Phát âm <span>tiếng Việt</span></h1>
-  <p class="sub">베트남어 기초 발음 연습장 · 북부(하노이) 발음 기준</p>
+  <p class="sub" id="subTxt">베트남어 기초 발음 연습장 · 북부(하노이) 발음 기준</p>
+  <div class="dialrow"><span class="lb">발음 기준</span>
+    <div class="seg" id="dial"><button data-d="north" aria-pressed="true">북부 (하노이)</button><button data-d="south" aria-pressed="false">남부 (호치민)</button></div>
+  </div>
+  <div class="notice" id="southNote" hidden>남부 모드예요. 성조 채점이 남부 기준으로 바뀌어요: <b>hỏi와 ngã는 같은 소리</b>(내려갔다 높이 올라감)로, <b>nặng</b>은 낮게 살짝 내려갔다 올라오는 모양으로 채점해요. 자음·받침 설명과 ‘남부 ≈’ 한글 발음도 남부식으로 바뀌어요. 단, <b>듣기 음성은 기기에 들어 있는 음성이라 대부분 북부 발음</b>이에요. v·d·gi 같은 소리는 ‘남부 ≈’ 표시를 따라 하세요.</div>
   <div class="notice" id="voiceNote" hidden></div>
 </header>
 
@@ -276,7 +283,7 @@ select.sm{width:auto;font:600 .85rem var(--f-body);padding:5px 8px}
       <div class="chips" id="chips"></div>
     </div>
     <div class="target">
-      <div><div class="syl" id="pSyl">ma</div><div class="tname" id="pTone"></div><div class="desc" id="pDesc"></div><div class="mean" id="pMean"></div><div class="pcons" id="pCons"></div></div>
+      <div><div class="syl" id="pSyl">ma</div><div class="tname" id="pTone"></div><div class="desc" id="pDesc"></div><div class="mean" id="pMean"></div><div id="pSouth"></div><div class="pcons" id="pCons"></div></div>
       <div id="pCt"></div>
     </div>
     <div class="row-btns" style="margin:0;align-items:center">
@@ -459,14 +466,35 @@ function contour(t){
   if(t.stop) extra=`<line x1="44" y1="31" x2="44" y2="43" stroke="${c}" stroke-width="3.5" stroke-linecap="round"/>`;
   return `<svg class="ct" viewBox="0 0 84 46" aria-hidden="true"><line class="axis" x1="4" y1="22" x2="80" y2="22" stroke-dasharray="3 4"/><path class="curve" d="${t.path}" stroke="${c}"/>${extra}</svg>`;
 }
-$("toneGrid").innerHTML=TONES.map(t=>`
+/* ---------- dialect (north / south) ---------- */
+let dialect="north";
+try{ if(localStorage.getItem("vpa.dialect")==="south") dialect="south"; }catch(e){}
+const isSouth=()=>dialect==="south";
+const SOUTH_TONES={
+  0:{desc:"평평하게, 조금 높게 유지 (북부와 같아요)"},
+  1:{desc:"낮게 시작해 조금 더 내려감 (숨소리 없이 보통 목소리로)",fix:"평소보다 낮은 데서 시작해 부드럽게 조금 내려가세요."},
+  3:{desc:"내려갔다가 높이 올라감 (남부는 ngã도 같은 소리)",path:"M8 24 Q26 38 42 34 Q62 26 76 8",ref:[[0,0],[.3,-2.5],[.5,-3],[.75,0],[1,3]],
+     fix:"확실히 내려갔다가 끝에서 처음보다 높이 올리세요. 남부에서는 ngã도 이렇게 말해요."},
+  4:{desc:"hỏi와 똑같이: 내려갔다가 높이 올라감 (목을 끊지 않아요)",path:"M8 24 Q26 38 42 34 Q62 26 76 8",ref:[[0,0],[.3,-2.5],[.5,-3],[.75,0],[1,3]],dot:false,
+     fix:"남부에서는 ngã를 hỏi와 똑같이 말해요. 내려갔다가 높이 올리세요."},
+  5:{desc:"낮게 살짝 내려갔다가 조금 올라옴 (목을 세게 막지 않아요)",path:"M8 30 Q30 40 48 38 Q64 35 76 33",ref:[[0,-1],[.45,-3.5],[1,-2]],stop:false,
+     fix:"낮은 데서 살짝 내려갔다가 조금만 올리세요. 북부처럼 뚝 끊지 않아도 돼요."}
+};
+const T=id=>isSouth()&&SOUTH_TONES[id]?{...TONES[id],...SOUTH_TONES[id]}:TONES[id];
+const SOUTH_READ={"vớ":"여","về":"예","vui":"유이","và":"야","vợ":"여","dạ":"야","da":"야","gì":"이","giờ":"여","ra":"라 / 야","rau":"라우 / 야우",
+  "anh":"안","xanh":"산","sách":"삿","bạn":"방","một":"목","thích":"틋에 가깝게","lạnh":"란","nhà":"냐"};
+const southRead=w=>isSouth()&&SOUTH_READ[w.toLowerCase()]?SOUTH_READ[w.toLowerCase()]:"";
+function renderTones(){
+$("toneGrid").innerHTML=TONES.map(t0=>{const t=T(t0.id); return `
  <div class="card">
   <div class="top"><div><div class="syl" style="color:var(${t.color})">${t.syl}</div>
    <div class="tname">${t.name} · 부호 ${t.mark}</div></div>${contour(t)}</div>
   <div class="desc">${t.desc}</div>
   <div class="mean">뜻: ${t.mean}</div>
   <div class="btns"><button class="play" data-say="${t.syl}">▶ 듣기</button><button class="play mic" data-practice="${t.syl}">🎙 따라하기</button></div>
- </div>`).join("");
+ </div>`;}).join("");
+}
+renderTones();
 function renderList(el,data){
   el.innerHTML=data.map(([l,ko,w,m])=>`
    <div class="item"><div class="letter">${l}</div>
@@ -602,11 +630,13 @@ function setWord(w){
     const o=document.createElement("option"); o.value=w; o.textContent=`${w} · ${TONES[toneOf(w.split(" ").pop())].name}`; $("pWord").appendChild(o);
   }
   target=w; $("pWord").value=w;
-  const last=w.split(" ").pop(); const t=TONES[toneOf(last)];
+  const last=w.split(" ").pop(); const t=T(toneOf(last));
   $("pSyl").textContent=w; $("pSyl").style.color=`var(${t.color})`;
   $("pTone").textContent=(w.includes(" ")?"마지막 음절 ":"")+`성조: ${t.name}`+(w.includes(" ")?" (여러 음절은 마지막 음절을 채점해요)":"");
   $("pDesc").textContent=t.desc; $("pCt").innerHTML=contour(t);
   const mn=meanOf(w); $("pMean").textContent=mn?`뜻: ${mn}`:"";
+  const sr=w.split(" ").map(x=>southRead(x)||"").filter(Boolean);
+  $("pSouth").textContent=isSouth()&&sr.length?`남부 발음 ≈ ${w.split(" ").map(x=>southRead(x)||x).join(" ")}`:"";
   showConsAvail(w);
   $("res").hidden=true; $("srOut").hidden=true; $("mineBtn").disabled=true; mineURL=null; $("dlBtn").disabled=true; mineBlob=null; $("rCons").hidden=true;
 }
@@ -732,6 +762,11 @@ function consInitial(word){
 function showConsAvail(word){
   const el=$("pCons"); if(!el) return;
   const key=consKey(word), ini=consInitial(word);
+  if(isSouth()&&/^(v|d|gi|r)/.test(ini)){
+    el.classList.remove("on");
+    el.innerHTML=`남부 ‘이(y)’ 소리 첫소리 <b>${esc(ini)}</b>: 자동 점검은 안 돼요. ‘▶ 내 녹음’을 들으며 ‘브·즈’ 같은 마찰 없이 ‘이’처럼 부드럽게 시작했는지 확인하세요.`;
+    return;
+  }
   el.classList.toggle("on",!!key);
   el.innerHTML = key ? `✓ 자음 점검 가능: 첫소리 <b>${CONS_RULES[key].name}</b>`
     : ini ? `자음 점검 미지원: 첫소리 <b>${esc(ini)}</b> (점검 가능: đ, b, t, th, c/k/q)`
@@ -810,6 +845,13 @@ function analyze(fr){
     if(run.length) runs.push(run);
     const drop=new Set(); runs.forEach(r=>{ if(Math.max(...r.map(i=>fr[i].rms||0))<0.5*pk||r.length<3) r.forEach(i=>drop.add(i)); });
     fr=fr.map((f,i)=>drop.has(i)?{...f,f:null}:f);
+    // weak frames whose pitch jumps far from the nearest strong frame are leftovers of background sound
+    const strong=fr.map((f,i)=>f.f&&(f.rms||0)>=0.35*pk?i:-1).filter(i=>i>=0);
+    if(strong.length) fr=fr.map((f,i)=>{
+      if(!f.f||(f.rms||0)>=0.35*pk) return f;
+      let near=strong[0]; for(const j of strong) if(Math.abs(j-i)<Math.abs(near-i)) near=j;
+      return Math.abs(12*Math.log2(f.f/fr[near].f))>4?{...f,f:null}:f;
+    });
   }
   let a=fr.findIndex(f=>f.f), b=fr.length-1-[...fr].reverse().findIndex(f=>f.f);
   if(a<0) return null;
@@ -855,6 +897,20 @@ function classify(A){
   let det=0; fit.forEach((f,i)=>{if(f>fit[det])det=i;});
   return {fit,det};
 }
+function classifySouth(A){
+  const {rise,dip,recov,range,dur}=A;
+  const f0=sig((2-Math.abs(rise))*2)*sig((3-range)*1.6)*sig((1.5-dip)*2);
+  const f1=sig((-rise-2)*1.5)*sig((1.5-recov)*2);
+  const f2=sig((rise-2.5)*1.5)*sig((2-dip)*2);
+  const f34=sig((dip-1.2)*2)*sig((recov-2.5)*1.5)*sig((rise+0.5)*1.5);            // 214: dip, then rise to/above start
+  const f5=Math.max(sig((dip-0.8)*2)*sig((recov-1)*2)*sig((1.5-rise)*1.5)*sig((rise+2)*2), // 212: low dip, comes back up near the start
+                    sig((-rise-1.2)*1.5)*sig((.3-dur)*14)*.8);
+  const fit=[f0,f1,f2,f34,f34,f5];
+  let det=0; fit.forEach((f,i)=>{if(f>fit[det])det=i;});
+  return {fit,det};
+}
+const sameTone=(a,b)=>a===b||(isSouth()&&a>=3&&a<=4&&b>=3&&b<=4);
+const toneLabel=id=>isSouth()&&(id===3||id===4)?"hỏi·ngã":TONES[id].name;
 function score(){
   const A=analyze(frames), tgt=toneOf(target.split(" ").pop());
   $("res").hidden=false;
@@ -864,7 +920,8 @@ function score(){
     $("rFb").textContent="조금 더 크게, 모음을 길게 끌어서 다시 녹음해보세요."; $("rStats").textContent="";
     drawGraph(null,tgt); return;
   }
-  let {fit,det}=classify(A), mx=Math.max(...fit);
+  let {fit,det}=isSouth()?classifySouth(A):classify(A), mx=Math.max(...fit);
+  if(sameTone(det,tgt)) det=tgt;
   let s = det===tgt ? Math.round(72+28*Math.min(1,fit[tgt]/.8)) : Math.round(68*fit[tgt]/mx);
   // syllables ending in -p/-t/-c/-ch can only carry sắc or nặng, and both are short: judge by direction only
   const lastSyl=stripTone(target.split(" ").pop()).toLowerCase(), checked=/(p|t|c|ch)$/.test(lastSyl)&&(tgt===2||tgt===5);
@@ -876,11 +933,12 @@ function score(){
   s=Math.max(5,Math.min(100,s));
   const col = s>=80?"--good":s>=55?"--warn":"--bad";
   $("rScore").textContent=s; $("rScore").style.color=css(col); mineScore=s;
-  $("rLabel").textContent = det===tgt ? `${TONES[tgt].name} 성조로 들려요` : `${TONES[det].name}처럼 들려요 (목표: ${TONES[tgt].name})`;
-  const fixTxt = checked ? (tgt===2?"-p·-t·-c로 끝나는 단어의 sắc는 짧게 끊겨요. 높은 음에서 짧고 날카롭게 살짝 올리며 끊으세요.":"-p·-t·-c로 끝나는 단어의 nặng은 낮게 뚝 떨어뜨리며 짧게 끊으세요.") : TONES[tgt].fix;
+  $("rLabel").textContent = det===tgt ? `${toneLabel(tgt)} 성조로 들려요` : `${toneLabel(det)}처럼 들려요 (목표: ${toneLabel(tgt)})`;
+  const fixTxt = checked ? (tgt===2?"-p·-t·-c로 끝나는 단어의 sắc는 짧게 끊겨요. 높은 음에서 짧고 날카롭게 살짝 올리며 끊으세요.":"-p·-t·-c로 끝나는 단어의 nặng은 낮게 뚝 떨어뜨리며 짧게 끊으세요.") : T(tgt).fix;
   const noiseLv=Math.max(...frames.map(f=>f.noise||0)), loud=peakRms>0&&noiseLv>0&&peakRms/noiseLv<8;
   $("rFb").textContent = (det===tgt ? (s>=90?"아주 좋아요! 이 느낌을 기억하세요. ":"좋아요. 그래프 모양을 목표에 더 가깝게 다듬어 보세요. ")+fixTxt : fixTxt)
     + (checked?" (받침 -p·-t·-c 단어는 오르내림 방향으로만 채점해요.)":"")
+    + (isSouth()?" [남부 기준 채점]":"")
     + (loud?" ⚠ 주변 소음이 커서 결과가 부정확할 수 있어요. 조용한 곳에서 다시 해보세요.":"");
   const r=A.rise; $("rStats").textContent=`음높이 변화 ${r>=0?"+":""}${r.toFixed(1)}반음 · 길이 ${A.dur.toFixed(2)}초${A.dip>1?` · 중간 하강 ${A.dip.toFixed(1)}반음`:""}${A.brk?" · 목 끊김 있음":""}`;
   drawGraph(A,tgt);
@@ -896,11 +954,11 @@ function drawGraph(A,tgt){
   g.setLineDash([]);
   g.fillText("시간 →",W-52,H-4);
   // reference
-  const T=TONES[tgt]; $("lgRef").style.background=css(T.color);
-  g.strokeStyle=css(T.color); g.globalAlpha=.55; g.lineWidth=6; g.lineCap="round"; g.lineJoin="round";
+  const Tg=T(tgt); $("lgRef").style.background=css(Tg.color);
+  g.strokeStyle=css(Tg.color); g.globalAlpha=.55; g.lineWidth=6; g.lineCap="round"; g.lineJoin="round";
   const scaleX = A ? 1 : 1;
   g.beginPath(); let pen=false;
-  T.ref.forEach(p=>{ if(!p){pen=false;return;} const x=X(p[0]*scaleX),y=Y(p[1]); if(!pen){g.moveTo(x,y);pen=true;} else g.lineTo(x,y); });
+  Tg.ref.forEach(p=>{ if(!p){pen=false;return;} const x=X(p[0]*scaleX),y=Y(p[1]); if(!pen){g.moveTo(x,y);pen=true;} else g.lineTo(x,y); });
   g.stroke(); g.globalAlpha=1;
   if(!A) return;
   // user
@@ -1112,6 +1170,23 @@ const CATALOG=[
  ["f-ch","f","-ch","‘-익’ (북부, ach는 ‘아익’)",[["sách","책"],["thích","좋아하다"]],3,"‘악’으로 말하기 쉬워요."]
 ].map(([id,cat,l,hint,ex,k,why],i)=>({id,cat,l,hint,ex,k,why,i}));
 
+const SOUTH_ITEM={
+ "t1":{hint:"낮게 시작해 조금 더 내려감 (숨소리 없이)"},
+ "t3":{hint:"남부: 내려갔다가 높이 올라감 (ngã와 같은 소리)",why:"남부에서는 hỏi와 ngã를 똑같이 말해서, 이 모양 하나만 익히면 돼요.",k:2},
+ "t4":{hint:"남부: hỏi와 똑같이 내려갔다가 높이 올라감",why:"남부에서는 목을 끊지 않아요. hỏi와 같은 소리예요.",k:2},
+ "t5":{hint:"남부: 낮게 살짝 내려갔다가 조금 올라옴",why:"북부처럼 뚝 끊지 않고, 낮은 곳에서 부드럽게 살짝 올라와요.",k:2},
+ "c-v":{hint:"남부: ‘이(y)’ 소리, 윗니를 입술에 대지 않음 (vớ ≈ 여)",why:"한국어 ‘여·야’처럼 시작하면 돼요. 영어 v처럼 마찰시키면 북부 발음이 돼요.",k:1,ex:[["vớ","양말"],["về","돌아가다"],["vui","기쁘다"]]},
+ "c-d":{hint:"남부: ‘이(y)’ 소리 (dạ ≈ 야, gì ≈ 이)",why:"",k:1,ex:[["dạ","네(공손)"],["gì","무엇"]]},
+ "c-r":{hint:"남부: 굴리는 r 또는 ‘이(y)’에 가까움 (사람마다 달라요)",why:"",k:2},
+ "c-sx":{hint:"x는 ㅆ, s는 혀를 살짝 말아 ‘쉬’처럼 내기도 해요 (요즘은 둘 다 ㅆ도 많아요)",k:1},
+ "c-tr":{hint:"남부: 혀끝을 말아 올린 ㅉ (ch와 구분)",why:"혀를 살짝 말아 올려 ch와 다르게 내요.",k:2},
+ "f-nh":{hint:"남부: ‘-ㄴ’처럼 (anh ≈ 안, xanh ≈ 산)",why:"북부식 ‘-잉’으로 말하지 않아도 돼요.",k:1},
+ "f-ch":{hint:"남부: ‘-ㄷ받침’처럼 (sách ≈ 삿)",why:"",k:1},
+ "f-n":{hint:"남부: -ng처럼 들리기도 해요 (bạn ≈ 방)",k:1},
+ "f-t":{hint:"남부: -c(ㄱ받침)처럼 들리기도 해요 (một ≈ 목)",k:1},
+ "f-ong":{hint:"ㅇ받침 + 입술을 다묾 (남부는 ông도 ong처럼)"}
+};
+const itemView=it=>isSouth()&&SOUTH_ITEM[it.id]?{...it,...SOUTH_ITEM[it.id]}:it;
 const LKEY="vpa.itemlog";
 let itemLog={};
 try{itemLog=JSON.parse(localStorage.getItem(LKEY)||"{}"); if(!itemLog||typeof itemLog!=="object"||Array.isArray(itemLog)) itemLog={};}catch(e){itemLog={};}
@@ -1146,7 +1221,7 @@ const LVL={hi:"높음",mid:"보통",lo:"낮음"};
 function renderCatalog(){
   if(!$("items")) return;
   const st=$("stF").value, sort=$("sortF").value;
-  const all=CATALOG.map(it=>({it,s:itemStats(it)}));
+  const all=CATALOG.map(itemView).map(it=>({it,s:itemStats(it)}));
   const touched=all.filter(x=>x.s.lastDone).length;
   $("allSum").innerHTML=`<span>전체 <b>${all.length}</b>개</span><span>연습한 발음 <b>${touched}</b>개</span><span>오늘 연습 <b>${all.filter(x=>x.s.doneToday).length}</b>개</span><span>오늘 생략 <b>${all.filter(x=>x.s.skipToday).length}</b>개</span><span>중요도 높음 <b class="sc-b">${all.filter(x=>x.s.lvl==="hi").length}</b>개</span>`;
   let list=all.filter(x=>catF==="all"||x.it.cat===catF);
@@ -1187,7 +1262,7 @@ function renderCatalog(){
           <div class="tags"><span class="pri p-${s.lvl}">중요도 ${LVL[s.lvl]}</span><span class="tag">${CAT_NAME[it.cat]}</span><span class="tag kr" title="한국인이 잘 틀리는 정도">한국인 주의 ${"★".repeat(it.k)}${"☆".repeat(3-it.k)}</span>${["c-đ","c-b","c-t","c-th","c-c"].includes(it.id)?`<span class="tag cc">자음 점검 가능</span>`:""}${s.doneToday?`<span class="tag today">오늘 연습함</span>`:""}${s.skipToday?`<span class="tag skiptoday">오늘 생략</span>`:""}</div>
         </div></div>
       ${it.why?`<div class="it-why">${esc(it.why)}</div>`:""}
-      <div class="it-ex">${it.ex.map(([w,m])=>`<span class="exw"><button data-say="${esc(w)}">▶ ${esc(w)}<small>${esc(m)}</small></button><button class="m" data-ipr="${it.id}|${esc(w)}" aria-label="${esc(w)} 따라하기">🎙</button></span>`).join("")}</div>
+      <div class="it-ex">${it.ex.map(([w,m])=>`<span class="exw"><button data-say="${esc(w)}">▶ ${esc(w)}<small>${esc(m)}</small>${southRead(w)?`<span class="south-read">남부 ≈ ${esc(southRead(w))}</span>`:""}</button><button class="m" data-ipr="${it.id}|${esc(w)}" aria-label="${esc(w)} 따라하기">🎙</button></span>`).join("")}</div>
       <div class="it-stats">${stats.join("")}</div>
       <div class="it-act">
         <button class="act ok" data-done="${it.id}">✓ 연습 완료</button>
@@ -1222,9 +1297,21 @@ $("backAll").addEventListener("click",()=>{
 });
 document.querySelector('.tab[data-tab="all"]').addEventListener("click",renderCatalog);
 
+function applyDialect(){
+  $("dial").querySelectorAll("[data-d]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.d===dialect));
+  $("subTxt").textContent="베트남어 기초 발음 연습장 · "+(isSouth()?"남부(호치민)":"북부(하노이)")+" 발음 기준";
+  $("southNote").hidden=!isSouth();
+  renderTones(); renderCatalog();
+  if(typeof target!=="undefined") setWord(target);
+}
+$("dial").addEventListener("click",e=>{
+  const b=e.target.closest("[data-d]"); if(!b) return;
+  dialect=b.dataset.d; try{localStorage.setItem("vpa.dialect",dialect);}catch(err){}
+  applyDialect();
+});
 setWord("ma");
 renderRecords();
-renderCatalog();
+applyDialect();
 </script>
 </body>
 </html>
