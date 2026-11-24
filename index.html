@@ -147,6 +147,8 @@ canvas#graph{width:100%;height:180px;display:block;border-radius:10px;background
 .pcons b{font-family:var(--f-viet)}
 .pcons.on{color:var(--accent)}
 .tag.cc{background:color-mix(in srgb,var(--accent) 14%,var(--surface));color:var(--accent)}
+.srrec{display:flex;gap:8px;align-items:flex-start;font-size:.82rem;color:var(--muted);cursor:pointer}
+.srrec input{margin-top:3px;accent-color:var(--accent)}
 .cons{background:var(--soft);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;font-size:.9rem}
 .cons .ch{font-family:var(--f-viet);font-weight:800}
 .vbar{position:relative;height:22px;border-radius:6px;background:var(--surface);border:1px solid var(--line);overflow:hidden}
@@ -325,6 +327,7 @@ select.sm{width:auto;font:600 .85rem var(--f-body);padding:5px 8px}
 
     <div class="res" id="srBox">
       <button class="ghost" id="srBtn">🗣 단어 인식으로 확인</button>
+      <label class="srrec"><input type="checkbox" id="srRecChk" checked> 단어 인식할 때 내 목소리도 녹음하기 (‘▶ 내 녹음’·‘⬇ 저장’으로 들을 수 있어요)</label>
       <div class="sr" id="srOut" hidden></div>
     </div>
   </div>
@@ -728,7 +731,7 @@ $("refFile").addEventListener("change",e=>{
 $("refDel").addEventListener("click",async()=>{ try{await REFS.del(target);}catch(e){} refreshRef(); renderCatalog(); });
 
 /* ---------- recording + pitch analysis ---------- */
-let noiseRms=[],peakRms=0,stream=null,actx=null,mediaRec=null,chunks=[],mineURL=null,recording=false,raf=0,frames=[],t0=0,lastVoice=0,srcNode=null,analyser=null,mineAudio=null,mineBlob=null,mineWord="",mineTime=0,mineScore=null;
+let noiseRms=[],peakRms=0,stream=null,actx=null,mediaRec=null,chunks=[],mineURL=null,recording=false,raf=0,frames=[],t0=0,lastVoice=0,srcNode=null,analyser=null,mineAudio=null,mineBlob=null,mineWord="",mineTime=0,mineScore=null,mineTag="";
 const MAX_MS=3000;
 function msg(t){const m=$("recMsg"); if(!t){m.hidden=true;return;} m.hidden=false; m.textContent=t;}
 
@@ -763,7 +766,7 @@ async function startRec(){
   analyser=actx.createAnalyser(); analyser.fftSize=2048; srcNode.connect(analyser);
   chunks=[];
   try{mediaRec=new MediaRecorder(stream); mediaRec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
-    mediaRec.onstop=()=>{const blob=new Blob(chunks,{type:mediaRec.mimeType||"audio/webm"}); if(mineURL)URL.revokeObjectURL(mineURL); mineURL=URL.createObjectURL(blob); mineBlob=blob; mineWord=target; mineTime=Date.now(); $("mineBtn").disabled=false; $("dlBtn").disabled=false; if(!$("res").hidden&&mineScore!==null) checkConsonant(blob,mineWord); else $("rCons").hidden=true;};
+    mediaRec.onstop=()=>{const blob=new Blob(chunks,{type:mediaRec.mimeType||"audio/webm"}); if(mineURL)URL.revokeObjectURL(mineURL); mineURL=URL.createObjectURL(blob); mineBlob=blob; mineWord=target; mineTime=Date.now(); mineTag=""; $("mineBtn").disabled=false; $("dlBtn").disabled=false; if(!$("res").hidden&&mineScore!==null) checkConsonant(blob,mineWord); else $("rCons").hidden=true;};
     mediaRec.start();}catch(e){mediaRec=null;}
   frames=[]; t0=performance.now(); lastVoice=0; recording=true; noiseRms=[]; peakRms=0;
   $("recBtn").classList.add("on"); $("recTxt").textContent="녹음 중… 탭하면 정지";
@@ -827,10 +830,34 @@ const CONS_RULES={
   "b":{name:"b",good:[0,8],warn:14,low:false,tip:"바람 없이, 입술을 닫은 채 목을 먼저 울리고 떼세요.",over:"바람이 섞여 p처럼 들릴 수 있어요."},
   "t":{name:"t",good:[0,15],warn:35,low:false,tip:"ㄸ처럼 바람 없이 짧게 떼세요.",over:"바람이 많아 th처럼 들릴 수 있어요."},
   "c":{name:"c / k / q",good:[0,30],warn:50,low:false,tip:"ㄲ처럼 바람 없이 떼세요.",over:"ㅋ처럼 바람이 많아요."},
-  "th":{name:"th",good:[45,120],warn:25,low:true,tip:"ㅌ처럼 바람을 세게, 길게 내보내세요.",under:"바람이 약해 t(ㄸ)처럼 들릴 수 있어요."}
+  "th":{name:"th",good:[45,120],warn:25,low:true,tip:"ㅌ처럼 바람을 세게, 길게 내보내세요.",under:"바람이 약해 t(ㄸ)처럼 들릴 수 있어요."},
+  "zN":{name:"gi / d / r (북부 z)",what:"모음 전 마찰",max:160,lowLbl:"마찰 없음 (y)",highLbl:"긴 마찰 (z)",good:[80,400],warn:40,low:true,
+        tip:"혀끝을 윗잇몸 가까이 두고 영어 zoo의 z처럼 ‘즈—’ 떨리는 소리를 낸 채로 모음까지 이어가세요. 혀를 붙였다 떼는 한국어 ㅈ이 되지 않게요.",
+        under:"마찰이 짧아 한국어 ‘ㅈ’이나 ‘이(y)’처럼 들릴 수 있어요."},
+  "jS":{name:"d / gi (남부 y)",what:"모음 전 마찰",max:160,lowLbl:"마찰 없음 (y)",highLbl:"긴 마찰 (z)",good:[0,25],warn:60,low:false,
+        tip:"혀를 어디에도 붙이지 말고 ‘이’에서 미끄러지듯 모음으로 넘어가세요 (giáo ≈ 야오, dạ ≈ 야).",
+        over:"마찰 소리가 섞여 북부식 z나 한국어 ‘ㅈ’처럼 들려요."}
 };
+// length of frication (high-frequency noise) right before the first strong vowel, in ms
+function measureFrication(x,sr){
+  const f=Math.max(1,Math.round(sr/16000)), s=sr/f, n=Math.floor(x.length/f), y=new Float32Array(n);
+  for(let i=0;i<n;i++){let a=0;for(let j=0;j<f;j++)a+=x[i*f+j];y[i]=a/f;}
+  // simple high-pass: second difference emphasises > ~3 kHz
+  const hop=Math.round(s*0.005), win=Math.round(s*0.01), F=[];
+  for(let i=2;i+win<n;i+=hop){let e=0,h=0;for(let k=i;k<i+win;k++){e+=y[k]*y[k];const d=y[k]-2*y[k-1]+y[k-2];h+=d*d;}F.push({t:i/s,rms:Math.sqrt(e/win),hf:Math.sqrt(h/win)});}
+  if(!F.length) return null;
+  const pk=Math.max(...F.map(z=>z.rms)), floor=[...F.map(z=>z.rms)].sort((a,b)=>a-b)[Math.floor(F.length*.1)]+1e-5;
+  const vo=F.findIndex(z=>z.rms>0.3*pk); if(vo<0) return null;
+  const vowelHf=median(F.slice(vo,vo+10).map(z=>z.hf/(z.rms+1e-9)));
+  // walk back from the vowel while frames are noisy (hf share well above the vowel's) and not silent
+  let k=vo-1, cnt=0, hfAbs=Math.max(...F.slice(vo,vo+10).map(z=>z.hf))*0.15;
+  while(k>=0 && F[k].rms>Math.max(floor*3,pk*0.01) && (F[k].hf/(F[k].rms+1e-9)>vowelHf*3 || F[k].hf>hfAbs)){cnt++;k--;}
+  // also count noisy frames inside the vowel's first 30 ms (voiced z keeps buzzing into the vowel)
+  return {fric:cnt*hop/s*1000, vowelHf};
+}
 function consKey(word){
-  const w=word.normalize("NFC").toLowerCase().trim();
+  const w=word.normalize("NFC").toLowerCase().trim(), ini=consInitial(word);
+  if(ini==="gi"||ini==="d"||(ini==="r"&&!isSouth())) return isSouth()?"jS":"zN";
   if(/^(kh|tr|ch)/.test(w)) return null;
   if(w.startsWith("th")) return "th";
   if(w.startsWith("đ")) return "đ";
@@ -846,15 +873,15 @@ function consInitial(word){
 function showConsAvail(word){
   const el=$("pCons"); if(!el) return;
   const key=consKey(word), ini=consInitial(word);
-  if(isSouth()&&/^(v|d|gi|r)/.test(ini)){
+  if(isSouth()&&/^(v|r)/.test(ini)){
     el.classList.remove("on");
     el.innerHTML=`남부 ‘이(y)’ 소리 첫소리 <b>${esc(ini)}</b>: 자동 점검은 안 돼요. ‘▶ 내 녹음’을 들으며 ‘브·즈’ 같은 마찰 없이 ‘이’처럼 부드럽게 시작했는지 확인하세요.`;
     return;
   }
   el.classList.toggle("on",!!key);
   el.innerHTML = key ? `✓ 자음 점검 가능: 첫소리 <b>${CONS_RULES[key].name}</b>`
-    : ini ? `자음 점검 미지원: 첫소리 <b>${esc(ini)}</b> (점검 가능: đ, b, t, th, c/k/q)`
-    : `자음 점검 없음: 모음으로 시작하는 단어예요 (점검 가능: đ, b, t, th, c/k/q)`;
+    : ini ? `자음 점검 미지원: 첫소리 <b>${esc(ini)}</b> (점검 가능: đ, b, t, th, c/k/q, gi/d${isSouth()?"":"/r"})`
+    : `자음 점검 없음: 모음으로 시작하는 단어예요 (점검 가능: đ, b, t, th, c/k/q, gi/d${isSouth()?"":"/r"})`;
 }
 function judgeCons(key,asp){
   const r=CONS_RULES[key];
@@ -870,19 +897,20 @@ async function checkConsonant(blob,word){
     actx=actx||new (window.AudioContext||window.webkitAudioContext)();
     const buf=await decode(await blob.arrayBuffer()), n=buf.length, x=new Float32Array(n);
     for(let c=0;c<buf.numberOfChannels;c++){const d=buf.getChannelData(c); for(let i=0;i<n;i++) x[i]+=d[i]/buf.numberOfChannels;}
-    r=measureOnset(x,buf.sampleRate);
+    if(key==="zN"||key==="jS"){ const m=measureFrication(x,buf.sampleRate); r=m&&{asp:Math.round(m.fric)}; }
+    else r=measureOnset(x,buf.sampleRate);
   }catch(e){ r=null; }
   if(target!==word) return;
   if(!r){ box.innerHTML="첫소리를 찾지 못했어요. 녹음 시작 후 잠깐 쉬었다가 또박또박 말해보세요."; return; }
-  const rule=CONS_RULES[key], v=judgeCons(key,r.asp), MAXMS=80;
+  const rule=CONS_RULES[key], v=judgeCons(key,r.asp), MAXMS=rule.max||80;
   const pct=ms=>Math.min(100,ms/MAXMS*100);
   const z0=pct(rule.good[0]), z1=pct(Math.min(rule.good[1],MAXMS));
   const verdict=v==="good"?"좋아요":v==="warn"?"조금 아쉬워요":"고쳐야 해요";
   const msg=v==="good"?"":(rule.low?rule.under:rule.over)+" ";
-  box.innerHTML=`<div>첫소리 <span class="ch">${rule.name}</span> 점검: 모음 전 바람 <b class="sc ${v==="good"?"sc-g":v==="warn"?"sc-w":"sc-b"}">${r.asp}ms · ${verdict}</b></div>
+  box.innerHTML=`<div>첫소리 <span class="ch">${rule.name}</span> 점검: ${rule.what||"모음 전 바람"} <b class="sc ${v==="good"?"sc-g":v==="warn"?"sc-w":"sc-b"}">${r.asp}ms · ${verdict}</b></div>
     <div><div class="vbar"><div class="zone" style="left:${z0}%;width:${z1-z0}%"></div><div class="mk" style="left:${pct(r.asp)}%"></div></div>
-    <div class="vscale"><span>0ms 바람 없음</span><span>초록 = 목표</span><span>${MAXMS}ms+ 바람 많음</span></div></div>
-    <div>${msg}${rule.tip}</div>`;
+    <div class="vscale"><span>0ms ${rule.lowLbl||"바람 없음"}</span><span>초록 = 목표</span><span>${MAXMS}ms+ ${rule.highLbl||"바람 많음"}</span></div></div>
+    <div>${msg}${rule.tip}</div>${rule.max?`<div class="hm">참고용 측정이에요. 마이크와 발음 습관에 따라 오차가 있어요.</div>`:""}`;
   // attach to the history entry of this attempt
   const h=[...hist].reverse().find(e=>e.w===word&&e.k!=="sr"&&Date.now()-e.t<15000);
   if(h){ h.ci=key; h.ca=r.asp; h.cv=v; saveHist(); renderRecords(); if(typeof renderCatalog==="function") renderCatalog(); }
@@ -908,7 +936,7 @@ $("dlBtn").addEventListener("click",async()=>{
   const d=new Date(mineTime), pad=x=>String(x).padStart(2,"0");
   const stamp=`${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;
   const ascii=mineWord.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D").replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"")||"word";
-  const base=`viet_${ascii}_${stamp}${mineScore!==null?`_${mineScore}pt`:""}`; // ASCII-only: some browsers drop non-ASCII download names
+  const base=`viet_${ascii}_${stamp}${mineTag?`_${mineTag}`:mineScore!==null?`_${mineScore}pt`:""}`; // ASCII-only: some browsers drop non-ASCII download names
   let file=mineBlob, ext=(mineBlob.type.includes("mp4")?"m4a":mineBlob.type.includes("ogg")?"ogg":"webm");
   try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)(); file=toWav(await decode(await mineBlob.arrayBuffer())); ext="wav"; }catch(e){}
   const url=URL.createObjectURL(file), a=document.createElement("a");
@@ -918,8 +946,8 @@ $("dlBtn").addEventListener("click",async()=>{
 });
 
 function median(a){const s=[...a].sort((p,q)=>p-q);return s[s.length>>1];}
-function analyze(fr){
-  // drop weak voiced frames (background noise), keep voiced span, convert to semitones, smooth, fix octave jumps
+function cleanFrames(fr){
+  // drop weak voiced frames (background noise)
   const pk=Math.max(0,...fr.filter(f=>f.f).map(f=>f.rms||0));
   if(pk>0){
     fr=fr.map(f=>f.f&&(f.rms||0)<0.15*pk?{...f,f:null}:f);
@@ -937,17 +965,41 @@ function analyze(fr){
       return Math.abs(12*Math.log2(f.f/fr[near].f))>4?{...f,f:null}:f;
     });
   }
-  let a=fr.findIndex(f=>f.f), b=fr.length-1-[...fr].reverse().findIndex(f=>f.f);
-  if(a<0) return null;
-  // use the last voiced run cluster for multi-syllable phrases: analyze final syllable
-  const span=fr.slice(a,b+1);
-  if(target.includes(" ")){
-    // find last gap >= 120ms
-    let cut=0; for(let i=1;i<span.length;i++){ if(!span[i].f){let j=i;while(j<span.length&&!span[j].f)j++; if(j<span.length&&span[j].t-span[i-1].t>=120)cut=j; i=j;} }
-    span.splice(0,cut);
+  return fr;
+}
+function voicedSpan(fr){
+  const a=fr.findIndex(f=>f.f); if(a<0) return null;
+  const b=fr.length-1-[...fr].reverse().findIndex(f=>f.f);
+  return fr.slice(a,b+1);
+}
+function analyze(fr){ const sp=voicedSpan(cleanFrames(fr)); return sp?analyzeSpan(sp):null; }
+// split an utterance into n syllables at the deepest loudness dips / voiceless gaps
+function segmentSyllables(fr,n){
+  const span=voicedSpan(cleanFrames(fr)); if(!span) return null;
+  if(n<=1) return [span];
+  const L=span.length, dt=L>1?(span[L-1].t-span[0].t)/(L-1):16.7;
+  const minLen=Math.max(3,Math.round(90/dt)), win=Math.max(3,Math.round(150/dt));
+  const e=span.map((f,i)=>{let a=0,c=0;for(let j=Math.max(0,i-1);j<=Math.min(L-1,i+1);j++){a+=span[j].rms||0;c++;}return a/c;});
+  const cand=[];
+  for(let k=minLen;k<L-minLen;k++){
+    const isMin=e[k]<=e[k-1]&&e[k]<=e[k+1];
+    if(!isMin&&span[k].f) continue;
+    const left=Math.max(...e.slice(Math.max(0,k-win),k)), right=Math.max(...e.slice(k+1,Math.min(L,k+win+1)));
+    cand.push({k,depth:Math.min(left,right)/(e[k]+1e-6)*(span[k].f?1:2)});
   }
+  cand.sort((p,q)=>q.depth-p.depth);
+  let cuts=[]; for(const c of cand){ if(cuts.every(k=>Math.abs(k-c.k)>=minLen)) cuts.push(c.k); if(cuts.length===n-1) break; }
+  if(cuts.length<n-1){ cuts=[]; for(let i=1;i<n;i++) cuts.push(Math.round(L*i/n)); }
+  cuts.sort((p,q)=>p-q);
+  const segs=[]; let st=0; for(const k of [...cuts,L]){ segs.push(span.slice(st,k)); st=k; }
+  // drop ~35 ms at each inner edge: the analysis window still carries the neighbouring syllable there
+  return segs.map((sg,i)=>{ let v=voicedSpan(sg)||sg; const cut=Math.max(1,Math.round(35/dt));
+    if(v.length>4*cut){ v=v.slice(i>0?cut:0, i<segs.length-1?v.length-cut:v.length); } return v; });
+}
+function analyzeSpan(span){
+  // convert to semitones, smooth, fix octave jumps
   const voiced=span.filter(f=>f.f);
-  if(voiced.length<5) return null;
+  if(voiced.length<4) return null;
   const ref=median(voiced.slice(0,Math.max(3,Math.floor(voiced.length*.15))).map(f=>f.f));
   let pts=span.map(f=>f.f?{t:f.t,st:12*Math.log2(f.f/ref)}:{t:f.t,st:null});
   const med=median(pts.filter(p=>p.st!==null).map(p=>p.st));
@@ -995,62 +1047,84 @@ function classifySouth(A){
 }
 const sameTone=(a,b)=>a===b||(isSouth()&&a>=3&&a<=4&&b>=3&&b<=4);
 const toneLabel=id=>isSouth()&&(id===3||id===4)?"hỏi·ngã":TONES[id].name;
-function score(){
-  const A=analyze(frames), tgt=toneOf(target.split(" ").pop());
-  $("res").hidden=false;
-  if(!A){
-    mineScore=null; $("rScore").textContent="–"; $("rScore").style.color=css("--muted");
-    $("rLabel").textContent="목소리가 잘 안 들렸어요";
-    $("rFb").textContent="조금 더 크게, 모음을 길게 끌어서 다시 녹음해보세요."; $("rStats").textContent="";
-    drawGraph(null,tgt); return;
-  }
+function judgeSyl(A,syl){
+  const tgt=toneOf(syl);
+  if(!A) return {syl,tgt,A:null,det:null,s:5,checked:false};
   let {fit,det}=isSouth()?classifySouth(A):classify(A), mx=Math.max(...fit);
   if(sameTone(det,tgt)) det=tgt;
   let s = det===tgt ? Math.round(72+28*Math.min(1,fit[tgt]/.8)) : Math.round(68*fit[tgt]/mx);
   // syllables ending in -p/-t/-c/-ch can only carry sắc or nặng, and both are short: judge by direction only
-  const lastSyl=stripTone(target.split(" ").pop()).toLowerCase(), checked=/(p|t|c|ch)$/.test(lastSyl)&&(tgt===2||tgt===5);
+  const checked=/(p|t|c|ch)$/.test(stripTone(syl).toLowerCase())&&(tgt===2||tgt===5);
   if(checked){
     det = A.rise>-1 ? 2 : 5;
     const margin = tgt===2 ? (A.rise+1)/3 : (-A.rise-1)/3;
     s = det===tgt ? Math.round(75+25*Math.min(1,Math.max(0,margin))) : Math.round(45*Math.max(0,1+margin));
   }
-  s=Math.max(5,Math.min(100,s));
+  return {syl,tgt,A,det,s:Math.max(5,Math.min(100,s)),checked};
+}
+function fixFor(p){
+  return p.checked ? (p.tgt===2?"-p·-t·-c로 끝나는 음절의 sắc는 짧게 끊겨요. 높은 음에서 짧고 날카롭게 살짝 올리며 끊으세요.":"-p·-t·-c로 끝나는 음절의 nặng은 낮게 뚝 떨어뜨리며 짧게 끊으세요.") : T(p.tgt).fix;
+}
+function score(){
+  const sylls=target.trim().split(/\s+/), n=sylls.length;
+  $("res").hidden=false;
+  const parts = n===1 ? [judgeSyl(analyze(frames),sylls[0])]
+    : ((segmentSyllables(frames,n)||[]).map((sg,i)=>judgeSyl(analyzeSpan(sg),sylls[i])));
+  if(!parts.length||parts.every(p=>!p.A)){
+    mineScore=null; $("rScore").textContent="–"; $("rScore").style.color=css("--muted");
+    $("rLabel").textContent="목소리가 잘 안 들렸어요";
+    $("rFb").textContent="조금 더 크게, 모음을 길게 끌어서 다시 녹음해보세요."; $("rStats").textContent="";
+    drawGraph(sylls.map(w=>({A:null,tgt:toneOf(w),syl:w}))); return;
+  }
+  const s=Math.max(5,Math.min(100,Math.round(parts.reduce((a,p)=>a+p.s,0)/parts.length)));
+  const ok=parts.every(p=>p.A&&p.det===p.tgt);
   const col = s>=80?"--good":s>=55?"--warn":"--bad";
   $("rScore").textContent=s; $("rScore").style.color=css(col); mineScore=s;
-  $("rLabel").textContent = det===tgt ? `${toneLabel(tgt)} 성조로 들려요` : `${toneLabel(det)}처럼 들려요 (목표: ${toneLabel(tgt)})`;
-  const fixTxt = checked ? (tgt===2?"-p·-t·-c로 끝나는 단어의 sắc는 짧게 끊겨요. 높은 음에서 짧고 날카롭게 살짝 올리며 끊으세요.":"-p·-t·-c로 끝나는 단어의 nặng은 낮게 뚝 떨어뜨리며 짧게 끊으세요.") : T(tgt).fix;
+  if(n===1){ const p=parts[0]; $("rLabel").textContent = p.det===p.tgt ? `${toneLabel(p.tgt)} 성조로 들려요` : `${toneLabel(p.det)}처럼 들려요 (목표: ${toneLabel(p.tgt)})`; }
+  else $("rLabel").textContent = parts.map(p=>`${p.syl} ${!p.A?"?":p.det===p.tgt?toneLabel(p.tgt)+" ✓":toneLabel(p.det)+" ✗"}`).join(" · ");
+  const bad=parts.find(p=>!p.A||p.det!==p.tgt);
   const noiseLv=Math.max(...frames.map(f=>f.noise||0)), loud=peakRms>0&&noiseLv>0&&peakRms/noiseLv<8;
-  $("rFb").textContent = (det===tgt ? (s>=90?"아주 좋아요! 이 느낌을 기억하세요. ":"좋아요. 그래프 모양을 목표에 더 가깝게 다듬어 보세요. ")+fixTxt : fixTxt)
-    + (checked?" (받침 -p·-t·-c 단어는 오르내림 방향으로만 채점해요.)":"")
+  $("rFb").textContent = (!bad ? (s>=90?"아주 좋아요! 이 느낌을 기억하세요. ":"좋아요. 그래프 모양을 목표에 더 가깝게 다듬어 보세요. ")+(n===1?fixFor(parts[0]):"")
+      : (n>1?`‘${bad.syl}’(목표 ${toneLabel(bad.tgt)}): `:"")+(bad.A?fixFor(bad):"이 음절 소리가 잘 안 잡혔어요. 음절 사이를 아주 살짝 띄어 말해 보세요."))
+    + (n>1?" (여러 음절은 음절마다 따로 채점해요.)":"")
+    + (parts.some(p=>p.checked)?" (받침 -p·-t·-c 음절은 오르내림 방향으로만 채점해요.)":"")
     + (isSouth()?" [남부 기준 채점]":"")
     + (loud?" ⚠ 주변 소음이 커서 결과가 부정확할 수 있어요. 조용한 곳에서 다시 해보세요.":"");
-  const r=A.rise; $("rStats").textContent=`음높이 변화 ${r>=0?"+":""}${r.toFixed(1)}반음 · 길이 ${A.dur.toFixed(2)}초${A.dip>1?` · 중간 하강 ${A.dip.toFixed(1)}반음`:""}${A.brk?" · 목 끊김 있음":""}`;
-  drawGraph(A,tgt);
-  addHist(target,s,det===tgt);
+  if(n===1){ const A=parts[0].A, r=A.rise; $("rStats").textContent=`음높이 변화 ${r>=0?"+":""}${r.toFixed(1)}반음 · 길이 ${A.dur.toFixed(2)}초${A.dip>1?` · 중간 하강 ${A.dip.toFixed(1)}반음`:""}${A.brk?" · 목 끊김 있음":""}`; }
+  else $("rStats").textContent=parts.map(p=>`${p.syl} ${p.A?(p.A.rise>=0?"+":"")+p.A.rise.toFixed(1)+"반음 · "+p.A.dur.toFixed(2)+"초":"–"}`).join("  |  ");
+  drawGraph(parts.map(p=>({A:p.A,tgt:p.tgt,syl:p.syl})));
+  addHist(target,s,ok);
 }
-function drawGraph(A,tgt){
+function drawGraph(parts){
   const cv=$("graph"), dpr=window.devicePixelRatio||1, W=cv.clientWidth||320, H=cv.clientHeight||180;
   cv.width=W*dpr; cv.height=H*dpr; const g=cv.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0);
   g.clearRect(0,0,W,H);
-  const pad=28, lo=-9, hi=9, X=u=>pad+u*(W-pad-12), Y=st=>10+(hi-Math.max(lo,Math.min(hi,st)))/(hi-lo)*(H-30);
+  const n=parts.length, top=n>1?16:0;
+  const pad=28, lo=-9, hi=9, X=u=>pad+u*(W-pad-12), Y=st=>10+top+(hi-Math.max(lo,Math.min(hi,st)))/(hi-lo)*(H-30-top);
   g.font="11px "+css("--f-body"); g.fillStyle=css("--muted"); g.strokeStyle=css("--line"); g.lineWidth=1;
   [[6,"높음"],[0,"시작"],[-6,"낮음"]].forEach(([v,l])=>{g.beginPath();g.setLineDash(v===0?[4,4]:[]);g.moveTo(pad,Y(v));g.lineTo(W-12,Y(v));g.stroke();g.fillText(l,2,Y(v)+4);});
   g.setLineDash([]);
   g.fillText("시간 →",W-52,H-4);
-  // reference
-  const Tg=T(tgt); $("lgRef").style.background=css(Tg.color);
-  g.strokeStyle=css(Tg.color); g.globalAlpha=.55; g.lineWidth=6; g.lineCap="round"; g.lineJoin="round";
-  const scaleX = A ? 1 : 1;
-  g.beginPath(); let pen=false;
-  Tg.ref.forEach(p=>{ if(!p){pen=false;return;} const x=X(p[0]*scaleX),y=Y(p[1]); if(!pen){g.moveTo(x,y);pen=true;} else g.lineTo(x,y); });
-  g.stroke(); g.globalAlpha=1;
-  if(!A) return;
-  // user
-  g.strokeStyle=css("--fg"); g.lineWidth=2.5; g.beginPath(); pen=false;
-  const span=(A.tE-A.tS)||1;
-  // stretch user's time to 0..1 except nặng (keep short look relative to 0.6s)
-  A.pts.forEach(p=>{ if(p.st===null){pen=false;return;} const u=(p.t-A.tS)/span; const x=X(u),y=Y(p.st); if(!pen){g.moveTo(x,y);pen=true;} else g.lineTo(x,y); });
-  g.stroke();
+  $("lgRef").style.background=css(T(parts[0].tgt).color);
+  const gapU=n>1?0.05:0, w=(1-gapU*(n-1))/n;
+  parts.forEach((pt,i)=>{
+    const u0=i*(w+gapU), XX=u=>X(u0+u*w), Tg=T(pt.tgt);
+    if(n>1){
+      g.fillStyle=css(Tg.color); g.font="600 12px "+css("--f-viet"); g.fillText(pt.syl||"",XX(0),12);
+      if(i>0){ g.strokeStyle=css("--line"); g.lineWidth=1; g.setLineDash([2,3]); g.beginPath(); g.moveTo(X(u0-gapU/2),top+4); g.lineTo(X(u0-gapU/2),H-18); g.stroke(); g.setLineDash([]); }
+    }
+    // reference shape for this syllable
+    g.strokeStyle=css(Tg.color); g.globalAlpha=.55; g.lineWidth=6; g.lineCap="round"; g.lineJoin="round";
+    g.beginPath(); let pen=false;
+    Tg.ref.forEach(p=>{ if(!p){pen=false;return;} const x=XX(p[0]),y=Y(p[1]); if(!pen){g.moveTo(x,y);pen=true;} else g.lineTo(x,y); });
+    g.stroke(); g.globalAlpha=1;
+    const A=pt.A; if(!A) return;
+    // user's contour, stretched over this syllable's slot
+    g.strokeStyle=css("--fg"); g.lineWidth=2.5; g.beginPath(); pen=false;
+    const span=(A.tE-A.tS)||1;
+    A.pts.forEach(p=>{ if(p.st===null){pen=false;return;} const x=XX((p.t-A.tS)/span),y=Y(p.st); if(!pen){g.moveTo(x,y);pen=true;} else g.lineTo(x,y); });
+    g.stroke();
+  });
 }
 
 /* ---------- history (saved on this device) ---------- */
@@ -1150,23 +1224,58 @@ $("clrYes").addEventListener("click",()=>{hist=[];saveHist();$("clrConfirm").hid
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 if(!SR){$("srBtn").disabled=true;$("srBtn").textContent="🗣 단어 인식 (이 브라우저는 지원 안 함)";}
 const norm=s=>s.toLowerCase().normalize("NFC").replace(/[.,!?¿¡"']/g,"").trim();
+try{ if(localStorage.getItem("vpa.srrec")==="off") $("srRecChk").checked=false; }catch(e){}
+$("srRecChk").addEventListener("change",e=>{ try{localStorage.setItem("vpa.srrec",e.target.checked?"on":"off");}catch(err){} });
+// record the voice while the browser's recognizer listens (some phones can't share the microphone: then we say so)
+function startSideRecording(){
+  if(!navigator.mediaDevices||!window.MediaRecorder) return Promise.resolve(null);
+  return navigator.mediaDevices.getUserMedia({audio:true}).then(st=>{
+    const rec=new MediaRecorder(st), ch=[];
+    rec.ondataavailable=e=>{if(e.data.size)ch.push(e.data);};
+    const done=new Promise(res=>{ rec.onstop=()=>{ st.getTracks().forEach(t=>t.stop()); res(new Blob(ch,{type:rec.mimeType||"audio/webm"})); }; });
+    rec.start(); return {stop:()=>{ if(rec.state!=="inactive") rec.stop(); return done; }};
+  }).catch(()=>null);
+}
+async function blobIsSilent(blob){
+  try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)(); const b=await decode(await blob.arrayBuffer()); const d=b.getChannelData(0);
+    let m=0; for(let i=0;i<d.length;i++) m=Math.max(m,Math.abs(d[i])); return m<0.01; }catch(e){ return false; }
+}
 $("srBtn").addEventListener("click",()=>{
   if(!SR||recording) return;
   if(synth) synth.cancel();
+  const word=target, wantRec=$("srRecChk").checked;
   const r=new SR(); r.lang="vi-VN"; r.interimResults=false; r.maxAlternatives=5;
-  const out=$("srOut"); out.hidden=false; out.textContent="듣고 있어요… ‘"+target+"’라고 말해보세요.";
+  const out=$("srOut"); out.hidden=false; out.textContent="듣고 있어요… ‘"+word+"’라고 말해보세요.";
   $("srBtn").disabled=true;
+  let side=null, sideStarting=null, tag="sr", errCode="";
+  if(wantRec) r.onaudiostart=()=>{ sideStarting=startSideRecording().then(x=>side=x); };
   r.onresult=e=>{
-    const alts=[...e.results[0]].map(a=>norm(a.transcript)); const tg=norm(target);
+    const alts=[...e.results[0]].map(a=>norm(a.transcript)); const tg=norm(word);
     const hitTop=alts[0]===tg||alts[0].split(" ").includes(tg)||alts[0].includes(tg);
     const hitAny=alts.some(a=>a===tg||a.includes(tg));
-    out.innerHTML = hitTop ? `✓ 정확하게 <span class="w">${target}</span>(으)로 알아들었어요.`
-      : hitAny ? `◐ 후보 중에는 <span class="w">${target}</span>이(가) 있지만, 가장 먼저 <span class="w">${alts[0]}</span>(으)로 들렸어요.`
-      : `✗ <span class="w">${alts[0]||"?"}</span>(으)로 들렸어요. 성조와 모음을 다시 확인해보세요.`;
-    addHist(target, hitTop?100:hitAny?50:0, hitTop, "sr");
+    tag = hitTop?"sr-ok":hitAny?"sr-near":"sr-miss";
+    out.innerHTML = hitTop ? `✓ 정확하게 <span class="w">${esc(word)}</span>(으)로 알아들었어요.`
+      : hitAny ? `◐ 후보 중에는 <span class="w">${esc(word)}</span>이(가) 있지만, 가장 먼저 <span class="w">${esc(alts[0])}</span>(으)로 들렸어요.`
+      : `✗ <span class="w">${esc(alts[0]||"?")}</span>(으)로 들렸어요. 성조와 모음을 다시 확인해보세요.`;
+    addHist(word, hitTop?100:hitAny?50:0, hitTop, "sr");
   };
-  r.onerror=e=>{out.textContent = e.error==="not-allowed"?"마이크 권한이 필요해요.": e.error==="no-speech"?"소리가 들리지 않았어요. 다시 눌러 말해보세요.": e.error==="network"?"음성인식은 인터넷 연결이 필요해요.":"인식하지 못했어요 ("+e.error+").";};
-  r.onend=()=>{$("srBtn").disabled=!SR;};
+  r.onerror=e=>{ errCode=e.error; out.textContent = e.error==="not-allowed"?"마이크 권한이 필요해요.": e.error==="no-speech"?"소리가 들리지 않았어요. 다시 눌러 말해보세요.": e.error==="network"?"음성인식은 인터넷 연결이 필요해요.": e.error==="audio-capture"&&wantRec?"이 기기에서는 단어 인식과 녹음을 동시에 할 수 없어요. ‘내 목소리도 녹음하기’를 끄고 다시 해보세요.":"인식하지 못했어요 ("+e.error+").";};
+  r.onend=async()=>{
+    $("srBtn").disabled=!SR;
+    if(sideStarting) await sideStarting;
+    if(!side){ if(wantRec&&!errCode&&sideStarting) out.insertAdjacentHTML("beforeend",`<div class="hm">이 기기에서는 단어 인식 중에 녹음을 함께 할 수 없어서 녹음은 저장되지 않았어요.</div>`); return; }
+    const blob=await side.stop();
+    if(blob.size<1000||await blobIsSilent(blob)){
+      out.insertAdjacentHTML("beforeend",`<div class="hm">녹음이 비어 있어요. 이 기기에서는 단어 인식이 마이크를 혼자 쓰는 것 같아요. 녹음이 필요하면 ‘녹음 시작’으로 따로 녹음해 주세요.</div>`);
+      return;
+    }
+    if(target!==word) return;
+    if(mineURL) URL.revokeObjectURL(mineURL);
+    mineURL=URL.createObjectURL(blob); mineBlob=blob; mineWord=word; mineTime=Date.now(); mineScore=null; mineTag=tag;
+    $("mineBtn").disabled=false; $("dlBtn").disabled=false;
+    if(errCode==="audio-capture"){ out.textContent="이 기기에서는 녹음과 단어 인식을 동시에 할 수 없어서 인식은 실패했어요. 녹음은 저장됐어요. 인식 결과가 필요하면 ‘내 목소리도 녹음하기’를 끄고 다시 해보세요."; mineTag="rec"; return; }
+    out.insertAdjacentHTML("beforeend",`<div class="hm">🎙 이번 단어 인식 녹음이 저장됐어요. ‘▶ 내 녹음’으로 듣거나 ‘⬇ 내 녹음 저장’으로 받을 수 있어요.</div>`);
+  };
   try{r.start();}catch(e){out.textContent="음성인식을 시작하지 못했어요."; $("srBtn").disabled=false;}
 });
 /* ---------- full pronunciation catalog ---------- */
